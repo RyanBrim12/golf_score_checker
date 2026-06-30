@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@spicygolf/ghin": "^0.12.1",
+    "dotenv": "^17.4.2",
+    "node-html-parser": "^8.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.1"
+  }
+}
