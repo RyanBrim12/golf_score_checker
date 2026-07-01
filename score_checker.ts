@@ -1,5 +1,6 @@
 import { GhinClient } from '@spicygolf/ghin'
 import { parse } from 'node-html-parser'
+import Fuse from 'fuse.js'
 import dotenv from 'dotenv'
 
 dotenv.config()
@@ -51,14 +52,38 @@ const ghin = new GhinClient({
 
 const scores: number[] = [];
 for (const golfer of golferWords) {
+  let output = '';
   const firstName = golfer[0];
   const lastName = golfer[1];
 
-// // Get a golfer's handicap
-  const golfers = await ghin.golfers.search({last_name: lastName, state: 'NJ', club_id: '10642', first_name: firstName})
+  let golfers = await ghin.golfers.search({last_name: lastName, state: 'NJ', club_id: '10642', first_name: firstName})
   if (golfers.length === 0) {
-    console.log(`No golfers found for ${firstName} ${lastName}`);
-    continue;
+    golfers = await ghin.golfers.search({last_name: lastName, state: 'NJ', club_id: '10642'})
+    if (golfers.length === 0) {
+      console.log(`No golfer found for ${firstName} ${lastName}`);
+      continue;
+    }
+    if (golfers.length !== 1) {
+      const fuse = new Fuse(golfers, { keys: ['first_name'], includeScore: true });
+      const result = fuse.search(firstName);
+      
+      if (result.length > 0) {
+        const bestMatch = result.reduce((bestGolfer, currentGolfer) => {
+          if (!bestGolfer) return currentGolfer;
+
+          const bestScore = bestGolfer.score ?? Number.POSITIVE_INFINITY;
+          const currentScore = currentGolfer.score ?? Number.POSITIVE_INFINITY;
+
+          return currentScore < bestScore ? currentGolfer : bestGolfer;
+        }, result[0]);
+        golfers = [bestMatch.item];
+        output += ` as ${bestMatch.item.first_name} ${bestMatch.item.last_name}`;
+      }
+      else {
+        console.log(`No golfer found for ${firstName} ${lastName}`);
+        continue;
+      }
+    }
   }
   const num = golfers[0].ghin
 
@@ -66,22 +91,22 @@ for (const golfer of golferWords) {
     const scores = await ghin.golfers.getScores(num, { from_date_played: new Date('2026-06-28'), to_date_played: new Date('2026-06-28') });
 
     if (!scores || !scores['scores'] || scores['scores'].length === 0) {
-      console.log(`No score found for ${firstName} ${lastName}`);
+      console.log(`No score found for ${firstName} ${lastName}${output}`);
       continue;
     }
-    console.log(`Score for ${firstName} ${lastName}:`, scores['scores'][0]['adjusted_gross_score'])
+    console.log(`Score for ${firstName} ${lastName}${output}:`, scores['scores'][0]['adjusted_gross_score'])
   }
   catch (e: any) {
     const rawResponse = e?.response;
     if (e.code === 'VALIDATION_ERROR' && rawResponse) {
       const parsed = JSON.parse(rawResponse);
       if (parsed.scores?.length) {
-        console.log(`Score for ${firstName} ${lastName}:`, parsed.scores[0].adjusted_gross_score);
+        console.log(`Score for ${firstName} ${lastName}${output}:`, parsed.scores[0].adjusted_gross_score);
       } else {
-        console.log(`No score found for ${firstName} ${lastName}`);
+        console.log(`No score found for ${firstName} ${lastName}${output}`);
       }
     } else {
-      console.error(`Error fetching scores for ${firstName} ${lastName}`);
+      console.error(`Error fetching scores for ${firstName} ${lastName}${output}`);
     }
   }
 }
