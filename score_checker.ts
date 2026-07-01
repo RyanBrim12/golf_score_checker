@@ -4,14 +4,37 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
+console.log('Getting club caddie cookie');
+const cookieUrl = `https://customer-cc18.clubcaddie.com/login?clubid=${encodeURIComponent(process.env.CLUB_CADDIE_CLUB_ID!)}`;
+let response = await fetch(cookieUrl, {
+  method: 'GET',
+  headers: {}
+});
+const cookies = response.headers.get('set-cookie');
+
+console.log('Logging in to club caddie');
+const loginUrl = 'https://customer-cc18.clubcaddie.com/login';
+response = await fetch(loginUrl, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    Cookie: cookies!,
+  },
+  body: `ClubId=${encodeURIComponent(process.env.CLUB_CADDIE_CLUB_ID!)}&Username=${encodeURIComponent(process.env.CLUB_CADDIE_USERNAME!)}&Password=${encodeURIComponent(process.env.CLUB_CADDIE_PASSWORD!)}`,
+});
+
+console.log(await response.text());
+
+console.log('Reading tee sheet')
+
 const url = 'https://customer-cc18.clubcaddie.com/TeeSheet/view/cffdabab/sheet?date=2026-06-28'
-const response = await fetch(url, {
+response = await fetch(url, {
     headers: {
-      "User-Agent": "Mozilla/5.0",
-      Cookie: "PHPSESSID=dctfrj3e6q32im8buoffjvm9h0",
+      Cookie: cookies!,
     },
   });
 const html = await response.text();
+
 const parsed = parse(html).querySelectorAll('.Green');
 
 // Remove duplicates while preserving order
@@ -21,6 +44,8 @@ const golfers = Array.from(new Set(parsed.map((el) => el.textContent?.trim()).fi
 const golferWords: string[][] = golfers.map((g) => g.split(/\s+/));
 
 // console.log(golferWords);
+
+console.log('Fetching scores for golfers on tee sheet');
 
 // Initialize the client
 const ghin = new GhinClient({
@@ -41,7 +66,7 @@ for (const golfer of golferWords) {
   }
   const num = golfers[0].ghin
 
-// console.log(num)
+console.log(num)
 
   try {
     const scores = await ghin.golfers.getScores(num, { from_date_played: new Date('2026-06-28'), to_date_played: new Date('2026-06-28') })
