@@ -23,8 +23,6 @@ response = await fetch(loginUrl, {
   body: `ClubId=${encodeURIComponent(process.env.CLUB_CADDIE_CLUB_ID!)}&Username=${encodeURIComponent(process.env.CLUB_CADDIE_USERNAME!)}&Password=${encodeURIComponent(process.env.CLUB_CADDIE_PASSWORD!)}`,
 });
 
-console.log(await response.text());
-
 console.log('Reading tee sheet')
 
 const url = 'https://customer-cc18.clubcaddie.com/TeeSheet/view/cffdabab/sheet?date=2026-06-28'
@@ -43,8 +41,6 @@ const golfers = Array.from(new Set(parsed.map((el) => el.textContent?.trim()).fi
 // Split each golfer string into words
 const golferWords: string[][] = golfers.map((g) => g.split(/\s+/));
 
-// console.log(golferWords);
-
 console.log('Fetching scores for golfers on tee sheet');
 
 // Initialize the client
@@ -53,7 +49,7 @@ const ghin = new GhinClient({
   username: process.env.GHIN_USERNAME!,
 })
 
-// const scores: number[] = [];
+const scores: number[] = [];
 for (const golfer of golferWords) {
   const firstName = golfer[0];
   const lastName = golfer[1];
@@ -66,10 +62,8 @@ for (const golfer of golferWords) {
   }
   const num = golfers[0].ghin
 
-console.log(num)
-
   try {
-    const scores = await ghin.golfers.getScores(num, { from_date_played: new Date('2026-06-28'), to_date_played: new Date('2026-06-28') })
+    const scores = await ghin.golfers.getScores(num, { from_date_played: new Date('2026-06-28'), to_date_played: new Date('2026-06-28') });
 
     if (!scores || !scores['scores'] || scores['scores'].length === 0) {
       console.log(`No score found for ${firstName} ${lastName}`);
@@ -77,8 +71,17 @@ console.log(num)
     }
     console.log(`Score for ${firstName} ${lastName}:`, scores['scores'][0]['adjusted_gross_score'])
   }
-  catch (error) {
-    console.error(`Error fetching scores for ${firstName} ${lastName}:`);
+  catch (e: any) {
+    const rawResponse = e?.response;
+    if (e.code === 'VALIDATION_ERROR' && rawResponse) {
+      const parsed = JSON.parse(rawResponse);
+      if (parsed.scores?.length) {
+        console.log(`Score for ${firstName} ${lastName}:`, parsed.scores[0].adjusted_gross_score);
+      } else {
+        console.log(`No score found for ${firstName} ${lastName}`);
+      }
+    } else {
+      console.error(`Error fetching scores for ${firstName} ${lastName}`);
+    }
   }
 }
-// console.log(scores)
