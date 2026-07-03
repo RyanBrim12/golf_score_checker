@@ -42,34 +42,48 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="card">
-      <div className="grid grid-2">
-        <div className="field">
-          <label htmlFor="date">Tee sheet date</label>
-          <input id="date" type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="mb-4 md:mb-0">
+          <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="date">
+            Tee sheet date
+          </label>
+          <input
+            id="date"
+            type="date"
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-slate-900 shadow-sm outline-none ring-0 focus:border-blue-500"
+          />
         </div>
-        <div className="field" style={{ alignSelf: 'end' }}>
-          <button className="button" type="button" onClick={handleFetch} disabled={loading}>
+        <div className="flex items-end">
+          <button
+            className="w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto"
+            type="button"
+            onClick={handleFetch}
+            disabled={loading}
+          >
             {loading ? 'Loading…' : 'Fetch Scores'}
           </button>
         </div>
       </div>
 
-      {error ? <div className="alert alert-error">{error}</div> : null}
+      {error ? <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
       {scores ? (
-        <div>
-          <p>
-            <strong>{scores.length}</strong> golfers found, <strong>{matchedCount}</strong> matched.
+        <div className="mt-6">
+          <p className="mb-4 text-sm text-slate-700">
+            <span className="font-semibold">{scores.length}</span> golfers found,{' '}
+            <span className="font-semibold">{matchedCount}</span> matched.
           </p>
-          <div className="grid">
+          <div className="grid gap-4">
             {scores.map((golfer) => (
               <GolferScoreCard key={golfer.clubCaddieName} golfer={golfer} />
             ))}
           </div>
         </div>
       ) : (
-        <p>Select a date and click Fetch Scores to load the scoreboard.</p>
+        <p className="mt-6 text-sm text-slate-600">Select a date and click Fetch Scores to load the scoreboard.</p>
       )}
     </div>
   );
