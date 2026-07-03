@@ -50,3 +50,9 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Next.js
+.next/
+
+# Production
+*.prompt.md
