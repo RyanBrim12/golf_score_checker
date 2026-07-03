@@ -55,4 +55,4 @@ Thumbs.db
 .next/
 
 # Production
-*.prompt.md
+.github/
