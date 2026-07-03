@@ -4,10 +4,13 @@ import { useMemo, useState } from 'react';
 import GolferScoreCard from './GolferScoreCard';
 import type { GolferScore } from '@/lib/types';
 
-const today = new Date().toISOString().slice(0, 10);
+const today = new Date();
+const yesterdayDate = new Date(today);
+yesterdayDate.setDate(today.getDate() - 1);
+const yesterday = yesterdayDate.toISOString().slice(0, 10);
 
 export default function Dashboard() {
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(yesterday);
   const [scores, setScores] = useState<GolferScore[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
