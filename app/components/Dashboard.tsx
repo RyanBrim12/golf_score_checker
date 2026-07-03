@@ -76,7 +76,7 @@ export default function Dashboard() {
             <span className="font-semibold">{scores.length}</span> golfers found,{' '}
             <span className="font-semibold">{matchedCount}</span> matched.
           </p>
-          <div className="grid gap-4">
+          <div className="grid">
             {scores.map((golfer) => (
               <GolferScoreCard key={golfer.clubCaddieName} golfer={golfer} />
             ))}
