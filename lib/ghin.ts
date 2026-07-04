@@ -36,26 +36,20 @@ async function searchGolfers(ghin: ReturnType<typeof createGhinClient>, lastName
     return [bestMatch];
   }
 
-  golfers = await ghin.golfers.globalSearch({last_name: lastName, state: state, first_name: firstName});
+  golfers = await ghin.golfers.search({last_name: lastName, state: state, first_name: firstName});
   if (golfers.length === 1) {
     return golfers;
   }
 
-  golfers = await ghin.golfers.globalSearch({last_name: lastName, state: state});
+  golfers = await ghin.golfers.search({last_name: lastName, state: state});
   bestMatch = findBestMatch(firstName, golfers);
   if (bestMatch) {
     return [bestMatch];
   }
 
-  golfers = await ghin.golfers.globalSearch({last_name: lastName, country: country, first_name: firstName});
+  golfers = await ghin.golfers.search({last_name: lastName, country: country, first_name: firstName});
   if (golfers.length === 1) {
     return golfers;
-  }
-
-  golfers = await ghin.golfers.globalSearch({last_name: lastName, country: country});
-  bestMatch = findBestMatch(firstName, golfers);
-  if (bestMatch) {
-    return [bestMatch];
   }
   
   return [];
@@ -143,7 +137,7 @@ export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[
         if (parsedScoreResponse?.scores?.[0].course_id !== courseId) {
           results.push(formatScoreResult(golfer, bestMatch, null, 'Score found, but course ID does not match.'));
         }
-
+        
         const score = parsedScoreResponse?.scores?.[0]?.adjusted_gross_score ?? null;
         results.push(
           formatScoreResult(
