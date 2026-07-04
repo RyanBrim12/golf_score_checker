@@ -100,14 +100,14 @@ export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[
         clubCaddieName: golfer.clubCaddieName,
         firstName: golfer.firstName,
         lastName: golfer.lastName,
-        status: 'error',
+        status: 'unmatched',
         message,
       });
       return [] as GhinGolfer[];
     });
 
     if (matchedGolfers.length === 0) {
-      if (results.some((result) => result.clubCaddieName === golfer.clubCaddieName && result.status === 'error')) {
+      if (results.some((result) => result.clubCaddieName === golfer.clubCaddieName && result.status === 'unmatched')) {
         continue;
       }
       results.push(formatScoreResult(golfer));
