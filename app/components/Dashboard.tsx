@@ -37,9 +37,11 @@ export default function Dashboard() {
   };
 
   const matchedCount = useMemo(
-    () => scores?.filter((item) => item.status === 'matched').length ?? 0,
+    () => (scores ? scores.length - scores.filter((item) => item.status === 'unmatched').length : 0),
     [scores]
   );
+
+  const scoreCount = useMemo(() => (scores ? scores.length - scores.filter((item) => item.status === 'no-score').length : 0), [scores]);
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -74,7 +76,8 @@ export default function Dashboard() {
         <div className="mt-6">
           <p className="mb-4 text-sm text-slate-700">
             <span className="font-semibold">{scores.length}</span> golfers found,{' '}
-            <span className="font-semibold">{matchedCount}</span> matched.
+            <span className="font-semibold">{matchedCount}</span> matched,{' '}
+            <span className="font-semibold">{scoreCount}</span> with scores.
           </p>
           <div className="grid">
             {scores.map((golfer) => (
