@@ -7,8 +7,6 @@ function createGhinClient(username: string, password: string) {
 }
 
 function findBestMatch(firstName: string, golfers: GhinGolfer[]): GhinGolfer | null {
-  // if (golfers.length === 1) return golfers[0];
-
   const fuse = new Fuse(golfers, { keys: ['first_name'], includeScore: true });
   const results = fuse.search(firstName);
 
