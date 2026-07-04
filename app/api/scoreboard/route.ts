@@ -12,6 +12,7 @@ const REQUIRED_ENV = [
   'GHIN_STATE',
   'GHIN_COUNTRY',
   'GHIN_CLUB_ID',
+  'GHIN_COURSE_ID'
 ];
 
 function validateEnv() {
@@ -41,11 +42,11 @@ export async function GET(request: Request) {
     const ghinState = process.env.GHIN_STATE!;
     const ghinCountry = process.env.GHIN_COUNTRY!;
     const ghinClubId = process.env.GHIN_CLUB_ID!;
-
+    const ghinCourseId = process.env.GHIN_COURSE_ID!;
     const session = await createClubCaddieSession(clubId, clubUsername, clubPassword);
     const html = await fetchTeeSheetHtml(session, sheetId, date);
     const golfers = parseGolfersFromTeeSheet(html);
-    const scores = await fetchGolferScores(date, golfers, ghinUsername, ghinPassword, ghinState, ghinClubId, ghinCountry);
+    const scores = await fetchGolferScores(date, golfers, ghinUsername, ghinPassword, ghinState, ghinClubId, ghinCountry, ghinCourseId);
 
     return NextResponse.json(scores);
   } catch (error: unknown) {

@@ -1,6 +1,6 @@
 import Fuse from 'fuse.js';
 import { GhinClient } from '@spicygolf/ghin';
-import type { ClubCaddieGolfer, GhinGolfer, GolferScore } from './types';
+import type { ClubCaddieGolfer, GhinGolfer, GolferScore, GhinScoreResponse } from './types';
 
 function createGhinClient(username: string, password: string) {
   return new GhinClient({ username, password });
@@ -97,7 +97,7 @@ function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, sco
   };
 }
 
-export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[], username: string, password: string, state?: string, clubId?: string, country?: string): Promise<GolferScore[]> {
+export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[], username: string, password: string, state?: string, clubId?: string, country?: string, courseId?: string): Promise<GolferScore[]> {
   const ghin = createGhinClient(username, password);
   const results: GolferScore[] = [];
 
@@ -130,17 +130,26 @@ export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[
         from_date_played: new Date(date),
         to_date_played: new Date(date),
       });
-
+      
+      if (scoreResponse?.scores?.[0].course_id !== courseId) {
+        results.push(formatScoreResult(golfer, bestMatch, null, 'Score found, but course ID does not match.'));
+        continue;
+      }
       const score = scoreResponse?.scores?.[0]?.adjusted_gross_score ?? null;
       results.push(formatScoreResult(golfer, bestMatch, score));
     } catch (error: unknown) {
-      const scoreFromError = extractScoreFromGhinError(error);
-      if (scoreFromError !== undefined) {
+      const parsedScoreResponse = extractScoreFromGhinError(error);
+      if (parsedScoreResponse !== undefined) {
+        if (parsedScoreResponse?.scores?.[0].course_id !== courseId) {
+          results.push(formatScoreResult(golfer, bestMatch, null, 'Score found, but course ID does not match.'));
+        }
+
+        const score = parsedScoreResponse?.scores?.[0]?.adjusted_gross_score ?? null;
         results.push(
           formatScoreResult(
             golfer,
             bestMatch,
-            scoreFromError,
+            score,
             'Score extracted from GHIN validation response.'
           )
         );
@@ -164,7 +173,7 @@ export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[
   return results;
 }
 
-function extractScoreFromGhinError(error: unknown): number | undefined {
+function extractScoreFromGhinError(error: unknown): GhinScoreResponse | undefined {
   if (typeof error !== 'object' || error === null) {
     return undefined;
   }
@@ -175,9 +184,9 @@ function extractScoreFromGhinError(error: unknown): number | undefined {
   }
 
   try {
-    const parsed = JSON.parse(String(anyError.response));
+    const parsed = JSON.parse(String(anyError.response)) as GhinScoreResponse;
     const score = parsed?.scores?.[0]?.adjusted_gross_score;
-    return typeof score === 'number' ? score : undefined;
+    return typeof score === 'number' ? parsed : undefined;
   } catch {
     return undefined;
   }

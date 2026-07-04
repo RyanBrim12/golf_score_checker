@@ -21,3 +21,10 @@ export type GolferScore = {
   status: 'matched' | 'unmatched' | 'no-score' | 'error';
   message?: string;
 };
+
+export type GhinScoreResponse = {
+  scores?: Array<{
+    adjusted_gross_score?: number | null;
+    course_id?: string | null;
+  }>;
+};
