@@ -20,37 +20,55 @@ function findBestMatch(firstName: string, golfers: GhinGolfer[]): GhinGolfer | n
   return bestMatch.score !== undefined && bestMatch.score < 0.5 ? bestMatch.item : null;
 }
 
-async function searchGolfers(ghin: ReturnType<typeof createGhinClient>, lastName: string, firstName: string, state?: string, clubId?: string, country?: string): Promise<GhinGolfer[]> {
-  let golfers, bestMatch;
+async function searchGolfers(ghin: ReturnType<typeof createGhinClient>, lastName: string, firstName: string, state?: string, clubId?: string, country?: string): Promise<GhinGolfer | null> {
+  let golfers: GhinGolfer[], bestMatch;
   
-  golfers = await ghin.golfers.search({last_name: lastName, state: state, club_id: clubId, first_name: firstName});
+  golfers = await ghin.golfers.search({last_name: lastName, state: state, club_id: clubId, first_name: firstName}).catch((error: unknown) => {
+    return parseGhinGolferError(error);
+  });
   if (golfers.length === 1) {
-    return golfers;
+    return golfers[0];
   }
 
-  golfers = await ghin.golfers.search({last_name: lastName, state: state, club_id: clubId});
+  golfers = await ghin.golfers.search({last_name: lastName, state: state, club_id: clubId}).catch((error: unknown) => {
+    return parseGhinGolferError(error);
+  });
   bestMatch = findBestMatch(firstName, golfers);
   if (bestMatch) {
-    return [bestMatch];
+    return bestMatch;
   }
 
-  golfers = await ghin.golfers.search({last_name: lastName, state: state, first_name: firstName});
+  golfers = await ghin.golfers.search({last_name: lastName, state: state, first_name: firstName}).catch((error: unknown) => {
+    return parseGhinGolferError(error);
+  });
   if (golfers.length === 1) {
-    return golfers;
+    return golfers[0];
   }
 
-  golfers = await ghin.golfers.search({last_name: lastName, state: state});
+  golfers = await ghin.golfers.search({last_name: lastName, state: state}).catch((error: unknown) => {
+    return parseGhinGolferError(error);
+  });
   bestMatch = findBestMatch(firstName, golfers);
   if (bestMatch) {
-    return [bestMatch];
+    return bestMatch;
   }
 
-  golfers = await ghin.golfers.search({last_name: lastName, country: country, first_name: firstName});
+  golfers = await ghin.golfers.search({last_name: lastName, country: country, first_name: firstName}).catch((error: unknown) => {
+    return parseGhinGolferError(error);
+  });
   if (golfers.length === 1) {
-    return golfers;
+    return golfers[0];
+  }
+
+  golfers = await ghin.golfers.search({last_name: lastName, country: country}).catch((error: unknown) => {
+    return parseGhinGolferError(error);
+  });
+  bestMatch = findBestMatch(firstName, golfers);
+  if (bestMatch) {
+    return bestMatch;
   }
   
-  return [];
+  return null;
 }
 
 function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, score?: number | null, message?: string): GolferScore {
@@ -91,119 +109,73 @@ function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, sco
 
 export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[], username: string, password: string, state?: string, clubId?: string, country?: string, courseId?: string): Promise<GolferScore[]> {
   const ghin = createGhinClient(username, password);
+  await searchGolfers(ghin, 'Martin', 'Alexander', 'NJ', clubId, 'USA',)
   const results: GolferScore[] = [];
 
   for (const golfer of golfers) {
-    const matchedGolfers = await searchGolfers(ghin, golfer.lastName, golfer.firstName, state, clubId, country).catch((error: unknown) => {
-      const message = parseGhinError(error);
-      results.push({
-        clubCaddieName: golfer.clubCaddieName,
-        firstName: golfer.firstName,
-        lastName: golfer.lastName,
-        status: 'unmatched',
-        message,
-      });
-      return [] as GhinGolfer[];
+    const matchedGolfer = await searchGolfers(ghin, golfer.lastName, golfer.firstName, state, clubId, country).catch((error: unknown) => {
+      console.error('Error thrown while matching', golfer, error);
+      return null;
     });
 
-    if (matchedGolfers.length === 0) {
-      if (results.some((result) => result.clubCaddieName === golfer.clubCaddieName && result.status === 'unmatched')) {
-        continue;
-      }
+    if (!matchedGolfer) {
       results.push(formatScoreResult(golfer));
       continue;
     }
 
-    const bestMatch = matchedGolfers[0];
-    const ghinNumber = bestMatch.ghin;
+    const ghinNumber = matchedGolfer.ghin;
 
-    try {
-      const scoreResponse = await ghin.golfers.getScores(ghinNumber, {
-        from_date_played: new Date(date),
-        to_date_played: new Date(date),
-      });
-      
-      if (scoreResponse?.scores?.[0].course_id !== courseId) {
-        results.push(formatScoreResult(golfer, bestMatch, null, 'Score found, but course ID does not match.'));
-        continue;
-      }
-      const score = scoreResponse?.scores?.[0]?.adjusted_gross_score ?? null;
-      results.push(formatScoreResult(golfer, bestMatch, score));
-    } catch (error: unknown) {
-      const parsedScoreResponse = extractScoreFromGhinError(error);
-      if (parsedScoreResponse !== undefined) {
-        if (parsedScoreResponse?.scores?.[0].course_id !== courseId) {
-          results.push(formatScoreResult(golfer, bestMatch, null, 'Score found, but course ID does not match.'));
-        }
-        
-        const score = parsedScoreResponse?.scores?.[0]?.adjusted_gross_score ?? null;
-        results.push(
-          formatScoreResult(
-            golfer,
-            bestMatch,
-            score,
-            'Score extracted from GHIN validation response.'
-          )
-        );
-        continue;
-      }
-
-      const message = parseGhinError(error);
-      results.push({
-        clubCaddieName: golfer.clubCaddieName,
-        firstName: golfer.firstName,
-        lastName: golfer.lastName,
-        matchedFirstName: bestMatch.first_name,
-        matchedLastName: bestMatch.last_name,
-        ghinNumber: bestMatch.ghin,
-        status: 'error',
-        message,
-      });
+    const scoreResponse = await ghin.golfers.getScores(ghinNumber, {
+      from_date_played: new Date(date),
+      to_date_played: new Date(date),
+    }).catch((error: unknown) => {
+      return parseGhinScoreError(error);
+    });
+    
+    if (scoreResponse?.scores?.length === 0 || scoreResponse?.scores?.[0].course_id !== courseId) {
+      results.push(formatScoreResult(golfer, matchedGolfer, null));
+      continue;
     }
+
+    const score = scoreResponse?.scores?.[0]?.adjusted_gross_score ?? null;
+    results.push(formatScoreResult(golfer, matchedGolfer, score));
   }
 
   return results;
 }
 
-function extractScoreFromGhinError(error: unknown): GhinScoreResponse | undefined {
-  if (typeof error !== 'object' || error === null) {
-    return undefined;
+function parseGhinGolferError(error: unknown): GhinGolfer[] {
+  if (typeof error === 'object' && error !== null) {
+    const anyError = error as Record<string, unknown>;
+    if (anyError.code === 'VALIDATION_ERROR' && anyError.response) {
+      try {
+        const parsed = JSON.parse(String(anyError.response));
+        if (parsed) {
+          return parsed;
+        }
+      } catch {
+        return [];
+      }
+    }
   }
 
-  const anyError = error as Record<string, unknown>;
-  if (anyError.code !== 'VALIDATION_ERROR' || !anyError.response) {
-    return undefined;
-  }
-
-  try {
-    const parsed = JSON.parse(String(anyError.response)) as GhinScoreResponse;
-    const score = parsed?.scores?.[0]?.adjusted_gross_score;
-    return typeof score === 'number' ? parsed : undefined;
-  } catch {
-    return undefined;
-  }
+  return [];
 }
 
-function parseGhinError(error: unknown): string {
+function parseGhinScoreError(error: unknown): GhinScoreResponse | undefined {
   if (typeof error === 'object' && error !== null) {
     const anyError = error as Record<string, unknown>;
     if (anyError.code === 'VALIDATION_ERROR' && anyError.response) {
       try {
         const parsed = JSON.parse(String(anyError.response));
         if (parsed?.scores?.length) {
-          return 'Score parsed from validation response.';
+          return parsed;
         }
       } catch {
-        return 'GHIN validation error returned unexpected payload.';
+        return undefined;
       }
-    }
-    if (typeof anyError.message === 'string') {
-      return anyError.message;
-    }
-    if (typeof anyError.toString === 'function') {
-      return anyError.toString();
     }
   }
 
-  return 'Unknown GHIN error occurred.';
+  return undefined;
 }
