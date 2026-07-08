@@ -144,7 +144,7 @@ export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[
   return results;
 }
 
-function parseGhinGolferError(error: unknown): GhinGolfer[] {
+export function parseGhinGolferError(error: unknown): GhinGolfer[] {
   if (typeof error === 'object' && error !== null) {
     const anyError = error as Record<string, unknown>;
     if (anyError.code === 'VALIDATION_ERROR' && anyError.response) {
@@ -162,7 +162,7 @@ function parseGhinGolferError(error: unknown): GhinGolfer[] {
   return [];
 }
 
-function parseGhinScoreError(error: unknown): GhinScoreResponse | undefined {
+export function parseGhinScoreError(error: unknown): GhinScoreResponse | undefined {
   if (typeof error === 'object' && error !== null) {
     const anyError = error as Record<string, unknown>;
     if (anyError.code === 'VALIDATION_ERROR' && anyError.response) {

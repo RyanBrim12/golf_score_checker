@@ -1,6 +1,11 @@
 import type { GolferScore } from '@/lib/types';
 
-export default function GolferScoreCard({ golfer }: { golfer: GolferScore }) {
+interface GolferScoreCardProps {
+  golfer: GolferScore;
+  onMatchClick?: (golfer: GolferScore) => void;
+}
+
+export default function GolferScoreCard({ golfer, onMatchClick }: GolferScoreCardProps) {
   const statusClass =
     golfer.status === 'matched'
       ? ''
@@ -29,10 +34,14 @@ export default function GolferScoreCard({ golfer }: { golfer: GolferScore }) {
           <h2 className="text-sm font-semibold text-slate-900">{golfer.clubCaddieName}</h2>
         </div>
         <div className="min-w-0">
-          <p className="text-sm text-slate-700">
+          <button
+            type="button"
+            onClick={() => onMatchClick?.(golfer)}
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-sm text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+          >
             <span className="font-semibold">Match:</span>{' '}
             {golfer.matchedFirstName ? `${golfer.matchedFirstName} ${golfer.matchedLastName}` : 'No match'}
-          </p>
+          </button>
         </div>
         <div className="min-w-0">
           {golfer.ghinNumber ? (

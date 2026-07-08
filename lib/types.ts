@@ -8,6 +8,7 @@ export type GhinGolfer = {
   first_name: string;
   last_name: string;
   ghin: number;
+  club_name: string | null;
 };
 
 export type GolferScore = {

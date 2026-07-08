@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import GolferScoreCard from './GolferScoreCard';
+import { ManualMatchModal, type ManualMatchData } from './ManualMatchModal';
 import type { GolferScore } from '@/lib/types';
 
 const today = new Date();
@@ -14,6 +15,9 @@ export default function Dashboard() {
   const [scores, setScores] = useState<GolferScore[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
+  const [activeGolfer, setActiveGolfer] = useState<GolferScore | null>(null);
+  const [matchModalInitialValues, setMatchModalInitialValues] = useState<ManualMatchData | null>(null);
 
   const handleFetch = async () => {
     setLoading(true);
@@ -42,6 +46,96 @@ export default function Dashboard() {
   );
 
   const scoreCount = useMemo(() => (scores ? scores.length - scores.filter((item) => item.status === 'no-score').length : 0), [scores]);
+
+  const handleOpenMatchModal = (golfer: GolferScore) => {
+    setActiveGolfer(golfer);
+    setMatchModalInitialValues({
+      firstName: golfer.matchedFirstName ?? '',
+      lastName: golfer.matchedLastName ?? '',
+      ghinNumber: golfer.ghinNumber ? String(golfer.ghinNumber) : '',
+    });
+    setIsMatchModalOpen(true);
+  };
+
+  const handleMatchSubmit = async (data: ManualMatchData) => {
+    if (!activeGolfer || !date) {
+      return;
+    }
+
+    const parsedGhin = Number.parseInt(data.ghinNumber, 10);
+
+    setScores((currentScores) =>
+      currentScores
+        ? currentScores.map((golfer) =>
+            golfer.clubCaddieName === activeGolfer.clubCaddieName
+              ? {
+                  ...golfer,
+                  matchedFirstName: data.firstName,
+                  matchedLastName: data.lastName,
+                  ghinNumber: Number.isNaN(parsedGhin) ? undefined : parsedGhin,
+                  status: golfer.status === 'no-score' ? 'no-score' : 'matched',
+                }
+              : golfer
+          )
+        : currentScores
+    );
+
+    try {
+      const response = await fetch(`/api/scoreboard?date=${encodeURIComponent(date)}`);
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result?.message || 'Failed to refresh scoreboard data.');
+      }
+
+      const refreshedScores: GolferScore[] = await response.json();
+      const refreshedMatch = refreshedScores.find((golfer) => golfer.clubCaddieName === activeGolfer.clubCaddieName);
+
+      setScores((currentScores) => {
+        if (!currentScores) {
+          return refreshedScores;
+        }
+
+        return currentScores.map((golfer) => {
+          if (golfer.clubCaddieName !== activeGolfer.clubCaddieName) {
+            return golfer;
+          }
+
+          if (!refreshedMatch) {
+            return {
+              ...golfer,
+              matchedFirstName: data.firstName,
+              matchedLastName: data.lastName,
+              ghinNumber: Number.isNaN(parsedGhin) ? undefined : parsedGhin,
+              status: golfer.status === 'no-score' ? 'no-score' : 'matched',
+            };
+          }
+
+          return {
+            ...refreshedMatch,
+            matchedFirstName: data.firstName,
+            matchedLastName: data.lastName,
+            ghinNumber: Number.isNaN(parsedGhin) ? undefined : parsedGhin,
+            status: refreshedMatch.status === 'unmatched' ? 'matched' : refreshedMatch.status,
+          };
+        });
+      });
+    } catch (refreshError) {
+      setError(refreshError instanceof Error ? refreshError.message : 'Unknown error occurred while refreshing scores.');
+    }
+
+    setIsMatchModalOpen(false);
+    setActiveGolfer(null);
+    setMatchModalInitialValues(null);
+  };
+
+  const handleMatchModalOpenChange = (open: boolean) => {
+    setIsMatchModalOpen(open);
+
+    if (!open) {
+      setActiveGolfer(null);
+      setMatchModalInitialValues(null);
+    }
+  };
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -81,13 +175,20 @@ export default function Dashboard() {
           </p>
           <div className="grid">
             {scores.map((golfer) => (
-              <GolferScoreCard key={golfer.clubCaddieName} golfer={golfer} />
+              <GolferScoreCard key={golfer.clubCaddieName} golfer={golfer} onMatchClick={handleOpenMatchModal} />
             ))}
           </div>
         </div>
       ) : (
         <p className="mt-6 text-sm text-slate-600">Select a date and click Fetch Scores to load the scoreboard.</p>
       )}
+
+      <ManualMatchModal
+        open={isMatchModalOpen}
+        onOpenChange={handleMatchModalOpenChange}
+        onSubmit={handleMatchSubmit}
+        initialValues={matchModalInitialValues}
+      />
     </div>
   );
 }
