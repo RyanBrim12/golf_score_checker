@@ -64,6 +64,15 @@ export default function Dashboard() {
 
     const parsedGhin = Number.parseInt(data.ghinNumber, 10);
 
+    const response = await fetch('/api/db', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: activeGolfer.clubCaddieName,
+          ghin: parsedGhin,
+        }),
+      });
+
     setScores((currentScores) =>
       currentScores
         ? currentScores.map((golfer) =>

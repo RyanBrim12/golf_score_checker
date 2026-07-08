@@ -1,5 +1,6 @@
 import Fuse from 'fuse.js';
 import { GhinClient } from '@spicygolf/ghin';
+import { createMatch, getMatchByName } from './database';
 import type { ClubCaddieGolfer, GhinGolfer, GolferScore, GhinScoreResponse } from './types';
 
 function createGhinClient(username: string, password: string) {
@@ -20,7 +21,15 @@ function findBestMatch(firstName: string, golfers: GhinGolfer[]): GhinGolfer | n
   return bestMatch.score !== undefined && bestMatch.score < 0.5 ? bestMatch.item : null;
 }
 
-async function searchGolfers(ghin: ReturnType<typeof createGhinClient>, lastName: string, firstName: string, state?: string, clubId?: string, country?: string): Promise<GhinGolfer | null> {
+async function searchGolfers(ghin: ReturnType<typeof createGhinClient>, name: string, lastName: string, firstName: string, state?: string, clubId?: string, country?: string): Promise<GhinGolfer | null> {
+  const storedMatch = getMatchByName(name);
+  if (storedMatch) {
+    const golfer = await ghin.golfers.getOne(storedMatch.ghin);
+    if (golfer) {
+      return golfer;
+    }
+  }
+  
   let golfers: GhinGolfer[], bestMatch;
   
   golfers = await ghin.golfers.search({last_name: lastName, state: state, club_id: clubId, first_name: firstName}).catch((error: unknown) => {
@@ -109,11 +118,10 @@ function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, sco
 
 export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[], username: string, password: string, state?: string, clubId?: string, country?: string, courseId?: string): Promise<GolferScore[]> {
   const ghin = createGhinClient(username, password);
-  await searchGolfers(ghin, 'Martin', 'Alexander', 'NJ', clubId, 'USA',)
   const results: GolferScore[] = [];
 
   for (const golfer of golfers) {
-    const matchedGolfer = await searchGolfers(ghin, golfer.lastName, golfer.firstName, state, clubId, country).catch((error: unknown) => {
+    const matchedGolfer = await searchGolfers(ghin, golfer.name, golfer.lastName, golfer.firstName, state, clubId, country).catch((error: unknown) => {
       console.error('Error thrown while matching', golfer, error);
       return null;
     });
@@ -124,6 +132,7 @@ export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[
     }
 
     const ghinNumber = matchedGolfer.ghin;
+    createMatch({ghin: ghinNumber, name: golfer.name});
 
     const scoreResponse = await ghin.golfers.getScores(ghinNumber, {
       from_date_played: new Date(date),

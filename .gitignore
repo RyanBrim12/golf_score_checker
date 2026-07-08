@@ -31,3 +31,6 @@ Thumbs.db
 # Production
 .github/
 test.*
+
+# Database
+lib/data/

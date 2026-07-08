@@ -1,5 +1,6 @@
 export type ClubCaddieGolfer = {
   clubCaddieName: string;
+  name: string;
   firstName: string;
   lastName: string;
 };
