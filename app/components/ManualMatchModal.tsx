@@ -17,6 +17,8 @@ export interface ManualMatchData {
   ghinNumber: string;
 }
 
+const SEARCH_DEBOUNCE_MS = 400;
+
 export function ManualMatchModal({
   open,
   onOpenChange,
@@ -38,12 +40,12 @@ export function ManualMatchModal({
 
     if (!trimmedFirstName && !trimmedLastName && !trimmedGhinNumber) {
       setResults([]);
+      setError(null);
       return;
     }
 
     setIsSearching(true);
     setError(null);
-    setResults([]);
 
     try {
       const response = await fetch('/api/ghin', {
@@ -65,6 +67,7 @@ export function ManualMatchModal({
       setResults(payload?.golfers || []);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Unknown error occurred.');
+      setResults([]);
     } finally {
       setIsSearching(false);
     }
@@ -72,19 +75,11 @@ export function ManualMatchModal({
 
   useEffect(() => {
     if (open) {
-      const nextFirstName = initialValues?.firstName ?? '';
-      const nextLastName = initialValues?.lastName ?? '';
-      const nextGhinNumber = initialValues?.ghinNumber ?? '';
-
-      setFirstName(nextFirstName);
-      setLastName(nextLastName);
-      setGhinNumber(nextGhinNumber);
+      setFirstName(initialValues?.firstName ?? '');
+      setLastName(initialValues?.lastName ?? '');
+      setGhinNumber(initialValues?.ghinNumber ?? '');
       setError(null);
       setResults([]);
-
-      if (nextFirstName.trim() || nextLastName.trim() || nextGhinNumber.trim()) {
-        void performSearch(nextFirstName, nextLastName, nextGhinNumber);
-      }
     } else {
       setFirstName('');
       setLastName('');
@@ -94,16 +89,16 @@ export function ManualMatchModal({
     }
   }, [open, initialValues?.firstName, initialValues?.lastName, initialValues?.ghinNumber]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (!open) return;
 
-    if (!firstName.trim() && !lastName.trim() && !ghinNumber.trim()) {
-      alert('Please enter GHIN number, first name, or last name');
-      return;
-    }
+    const timeoutId = setTimeout(() => {
+      void performSearch(firstName, lastName, ghinNumber);
+    }, SEARCH_DEBOUNCE_MS);
 
-    await performSearch(firstName, lastName, ghinNumber);
-  };
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, firstName, lastName, ghinNumber]);
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
@@ -123,13 +118,11 @@ export function ManualMatchModal({
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-[425px] mx-4">
-        {/* Header */}
         <div className="border-b px-6 py-4">
           <h2 className="text-lg font-semibold">Match GHIN Account</h2>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <div className="p-6 space-y-4">
           <div className='flex gap-5 mb-5'>
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -162,7 +155,7 @@ export function ManualMatchModal({
             </div>
           </div>
 
-          <div className="pt-5 mt-5 border-t-2 border-slate-400">
+          <div>
             <label htmlFor="ghinNumber" className="block text-sm font-medium text-gray-700 mb-1">
               GHIN Number
             </label>
@@ -179,7 +172,9 @@ export function ManualMatchModal({
 
           {error ? <p className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p> : null}
 
-          {results.length > 0 ? (
+          {isSearching ? (
+            <p className="text-sm text-slate-500">Searching...</p>
+          ) : results.length > 0 ? (
             <div className="space-y-2">
               <p className="text-sm font-medium text-slate-700">Select the correct golfer account</p>
               <ul className="max-h-56 space-y-2 overflow-y-auto rounded-md border border-slate-200 bg-slate-50 p-3 pr-1 text-sm text-slate-600">
@@ -203,20 +198,13 @@ export function ManualMatchModal({
             <button
               type="button"
               onClick={() => handleOpenChange(false)}
-              disabled={isLoading || isSearching}
+              disabled={isLoading}
               className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed font-medium"
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={isLoading || isSearching}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed font-medium"
-            >
-              {isSearching ? 'Searching...' : isLoading ? 'Matching...' : 'Match Account'}
-            </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

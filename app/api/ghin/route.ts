@@ -35,16 +35,17 @@ export async function POST(request: Request) {
 
     const searchQueries: Array<Record<string, string>> = [];
 
-    if (firstName || lastName) {
+    if (ghinNumber) {
+      const golfers = [await client.golfers.getOne(ghinNumber)];
+      if (golfers[0])
+        return NextResponse.json({ golfers: golfers});
+    }
+    else if (firstName || lastName) {
       const query: Record<string, string> = {};
       if (firstName) query.first_name = firstName;
       if (lastName) query.last_name = lastName;
       if (process.env.GHIN_COUNTRY) query.country = process.env.GHIN_COUNTRY;
       searchQueries.push(query);
-    }
-
-    if (ghinNumber) {
-      searchQueries.push({ ghin: ghinNumber });
     }
 
     for (const query of searchQueries) {
