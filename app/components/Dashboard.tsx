@@ -76,8 +76,20 @@ export default function Dashboard() {
         body: JSON.stringify({
           name: activeGolfer.clubCaddieName,
           ghin: parsedGhin,
-        }),
-      });
+      }),
+    });
+    
+    if (response.status == 404) {
+      await fetch('/api/db', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: activeGolfer.clubCaddieName,
+          ghin: parsedGhin,
+      }),
+    });
+    }
+
 
     setScores((currentScores) =>
       currentScores
