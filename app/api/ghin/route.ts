@@ -20,6 +20,8 @@ export async function POST(request: Request) {
     const firstName = typeof body?.firstName === 'string' ? body.firstName.trim() : '';
     const lastName = typeof body?.lastName === 'string' ? body.lastName.trim() : '';
     const ghinNumber = typeof body?.ghinNumber === 'string' ? body.ghinNumber.trim() : '';
+    const state = typeof body?.state === 'string' ? body.state.trim() : '';
+    const club = typeof body?.club === 'string' ? body.club.trim() : '';
 
     if (!firstName && !lastName && !ghinNumber) {
       return NextResponse.json(
@@ -44,6 +46,7 @@ export async function POST(request: Request) {
       const query: Record<string, string> = {};
       if (firstName) query.first_name = firstName;
       if (lastName) query.last_name = lastName;
+      if (state) query.state = state;
       if (process.env.GHIN_COUNTRY) query.country = process.env.GHIN_COUNTRY;
       searchQueries.push(query);
     }
@@ -51,7 +54,11 @@ export async function POST(request: Request) {
     for (const query of searchQueries) {
       const golfers = await client.golfers.search(query as Record<string, string>).catch((error: unknown) => parseGhinGolferError(error));
       if (Array.isArray(golfers) && golfers.length > 0) {
-        return NextResponse.json({ golfers: golfers as GhinGolfer[] });
+        const clubFilteredGolfers = golfers.filter((golfer) => {
+          if (!club) return true;
+          return golfer.club_name == club;
+        });
+        return NextResponse.json({ golfers: clubFilteredGolfers as GhinGolfer[] });
       }
     }
 

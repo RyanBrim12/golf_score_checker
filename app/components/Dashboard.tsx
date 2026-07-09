@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import GolferScoreCard from './GolferScoreCard';
 import { ManualMatchModal, type ManualMatchData } from './ManualMatchModal';
-import type { GolferScore } from '@/lib/types';
+import type { GhinGolfer, GolferScore } from '@/lib/types';
 
 const today = new Date();
 const yesterdayDate = new Date(today);
@@ -12,6 +12,8 @@ const yesterday = yesterdayDate.toISOString().slice(0, 10);
 
 export default function Dashboard() {
   const [date, setDate] = useState(yesterday);
+  const [state, setState] = useState('');
+  const [club, setClub] = useState('');
   const [scores, setScores] = useState<GolferScore[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,8 +33,10 @@ export default function Dashboard() {
         throw new Error(result?.message || 'Failed to load scoreboard data.');
       }
 
-      const result: GolferScore[] = await response.json();
-      setScores(result);
+      const result = await response.json();
+      setScores(result?.scores);
+      setState(result?.state);
+      setClub(result?.club);
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : 'Unknown error occurred.');
     } finally {
@@ -53,6 +57,8 @@ export default function Dashboard() {
       firstName: golfer.matchedFirstName ?? '',
       lastName: golfer.matchedLastName ?? '',
       ghinNumber: golfer.ghinNumber ? String(golfer.ghinNumber) : '',
+      state: state ?? '',
+      club: club ?? '',
     });
     setIsMatchModalOpen(true);
   };
@@ -96,8 +102,8 @@ export default function Dashboard() {
         throw new Error(result?.message || 'Failed to refresh scoreboard data.');
       }
 
-      const refreshedScores: GolferScore[] = await response.json();
-      const refreshedMatch = refreshedScores.find((golfer) => golfer.clubCaddieName === activeGolfer.clubCaddieName);
+      const refreshedScores = await response.json();
+      const refreshedMatch = refreshedScores?.scores.find((golfer: GolferScore) => golfer.clubCaddieName === activeGolfer.clubCaddieName);
 
       setScores((currentScores) => {
         if (!currentScores) {
