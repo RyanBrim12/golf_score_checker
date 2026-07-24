@@ -6,7 +6,7 @@ import type { GhinGolfer } from '@/lib/types';
 interface ManualMatchModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: ManualMatchData) => void;
+  onSubmit: (data: ManualMatchData | null) => void;
   isLoading?: boolean;
   initialValues?: ManualMatchData | null;
 }
@@ -115,14 +115,19 @@ export function ManualMatchModal({
     onOpenChange(newOpen);
   };
 
-  const handleSelectResult = (golfer: GhinGolfer) => {
-    onSubmit({
-      firstName: golfer.first_name,
-      lastName: golfer.last_name,
-      ghinNumber: String(golfer.ghin),
-      state,
-      club
-    });
+  const handleSelectResult = (golfer: GhinGolfer | null) => {
+    if (golfer === null) {
+      onSubmit(null);
+    }
+    else {
+      onSubmit({
+        firstName: golfer.first_name,
+        lastName: golfer.last_name,
+        ghinNumber: String(golfer.ghin),
+        state,
+        club
+      });
+    }
     handleOpenChange(false);
   };
 
@@ -219,7 +224,7 @@ export function ManualMatchModal({
 
           {isSearching ? (
             <p className="text-sm text-slate-500">Searching...</p>
-          ) : results.length > 0 ? (
+          ) : (
             <div className="space-y-2">
               <p className="text-sm font-medium text-slate-700">Select the correct golfer account</p>
               <ul className="max-h-56 space-y-2 overflow-y-auto rounded-md border border-slate-200 bg-slate-50 p-3 pr-1 text-sm text-slate-600">
@@ -234,9 +239,18 @@ export function ManualMatchModal({
                     </button>
                   </li>
                 ))}
+                <li key="none">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectResult(null)}
+                    className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                  >
+                    No Match
+                  </button>
+                </li>
               </ul>
             </div>
-          ) : null}
+          )}
 
           <div className="flex justify-end gap-2 pt-4 border-t mt-6">
             <button

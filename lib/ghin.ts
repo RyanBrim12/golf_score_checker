@@ -188,3 +188,19 @@ export function parseGhinScoreError(error: unknown): GhinScoreResponse | undefin
 
   return undefined;
 }
+
+export async function fetchScoreByGhin(ghin: number, date: string, username: string, password: string, courseId?: string): Promise<number | null> {
+  const ghinClient = createGhinClient(username, password);
+  const scoreResponse = await ghinClient.golfers.getScores(ghin, {
+      from_date_played: new Date(date),
+      to_date_played: new Date(date),
+    }).catch((error: unknown) => {
+      return parseGhinScoreError(error);
+    });
+    
+    if (scoreResponse?.scores?.length === 0 || scoreResponse?.scores?.[0].course_id !== courseId)
+      return null
+
+    const score = scoreResponse?.scores?.[0]?.adjusted_gross_score ?? null;
+    return score;
+}
