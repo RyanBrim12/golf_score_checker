@@ -56,7 +56,7 @@ export function parseGolfersFromTeeSheet(html: string): ClubCaddieGolfer[] {
       clubCaddieName: value,
       name: value,
       firstName: parts[0] ?? '',
-      lastName: parts[1] ?? '',
+      lastName: parts.slice(1).join(' '),
     };
   });
 }

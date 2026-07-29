@@ -208,7 +208,21 @@ export default function Dashboard() {
             <span className="font-semibold">{scoreCount}</span> with scores.
           </p>
           <div className="grid gap-3">
-            {scores.map((golfer) => (
+            {scores.sort((a, b) => {
+              if (a.lastName < b.lastName) return -1;
+              if (a.lastName === b.lastName) {
+                if (a.firstName < b.firstName) return -1;
+                if (a.firstName > b.firstName) return 1;
+                return 0;
+              }
+              return 1;
+            }).sort((a, b) => {
+              if (a.status === b.status) return 0;
+              if (a.status === 'no-score') return -1;
+              if (b.status === 'no-score') return 1;
+              if (a.status === 'matched') return -1;
+              return 1;
+            }).map((golfer) => (
               <GolferScoreCard
                 key={golfer.clubCaddieName}
                 golfer={golfer}
