@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import GolferScoreCard from './GolferScoreCard';
+import ScoreboardSkeleton from './ScoreboardSkeleton';
 import type { GolferScore } from '@/lib/types';
 
 const today = new Date();
@@ -60,19 +61,31 @@ export default function Dashboard() {
         </div>
         <div className="flex items-end">
           <button
-            className="w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-500 disabled:opacity-80 md:w-auto shadow-xs"
             type="button"
             onClick={handleFetch}
             disabled={loading}
           >
-            {loading ? 'Loading…' : 'Fetch Scores'}
+            {loading ? (
+              <>
+                <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                <span>Fetching Scores...</span>
+              </>
+            ) : (
+              'Fetch Scores'
+            )}
           </button>
         </div>
       </div>
 
       {error ? <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
-      {scores ? (
+      {loading ? (
+        <ScoreboardSkeleton />
+      ) : scores ? (
         <div className="mt-6">
           <p className="mb-4 text-sm text-slate-700">
             <span className="font-semibold">{scores.length}</span> golfers found,{' '}
