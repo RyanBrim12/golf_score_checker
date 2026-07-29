@@ -23,6 +23,9 @@ export async function POST(request: Request) {
     const state = typeof body?.state === 'string' ? body.state.trim() : '';
     const club = typeof body?.club === 'string' ? body.club.trim() : '';
 
+    const page = typeof body?.page === 'number' && body.page > 0 ? Math.floor(body.page) : 1;
+    const perPage = typeof body?.per_page === 'number' && body.per_page > 0 && body.per_page <= 100 ? Math.floor(body.per_page) : 100;
+
     if (!firstName && !lastName && !ghinNumber) {
       return NextResponse.json(
         { message: 'Provide at least a first name, last name, or GHIN number.' },
@@ -48,6 +51,8 @@ export async function POST(request: Request) {
       if (lastName) query.last_name = lastName;
       if (state) query.state = state;
       if (process.env.GHIN_COUNTRY) query.country = process.env.GHIN_COUNTRY;
+      query.per_page = String(perPage);
+      query.page = String(page);
       searchQueries.push(query);
     }
 
@@ -56,7 +61,7 @@ export async function POST(request: Request) {
       if (Array.isArray(golfers) && golfers.length > 0) {
         const clubFilteredGolfers = golfers.filter((golfer) => {
           if (!club) return true;
-          return golfer.club_name == club;
+          return golfer.club_name?.toLowerCase() == club.toLowerCase();
         });
         return NextResponse.json({ golfers: clubFilteredGolfers as GhinGolfer[] });
       }

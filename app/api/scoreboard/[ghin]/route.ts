@@ -14,11 +14,12 @@ function validateEnv() {
   }
 }
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ ghin: number }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ ghin: string }> }) {
   try {
     validateEnv();
 
-    const ghin = (await params).ghin;
+    const ghinParam = (await params).ghin;
+    const ghin = Number(ghinParam);
 
     const { searchParams } = request.nextUrl;
     const date = searchParams.get('date');

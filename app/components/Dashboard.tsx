@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
   const [activeGolfer, setActiveGolfer] = useState<GolferScore | null>(null);
   const [matchModalInitialValues, setMatchModalInitialValues] = useState<ManualMatchData | null>(null);
+  const [updatingGolferName, setUpdatingGolferName] = useState<string | null>(null);
 
   const handleFetch = async () => {
     setLoading(true);
@@ -54,8 +55,8 @@ export default function Dashboard() {
   const handleOpenMatchModal = (golfer: GolferScore) => {
     setActiveGolfer(golfer);
     setMatchModalInitialValues({
-      firstName: golfer.matchedFirstName ?? '',
-      lastName: golfer.matchedLastName ?? '',
+      firstName: golfer.matchedFirstName ?? golfer.firstName ?? '',
+      lastName: golfer.matchedLastName ?? golfer.lastName ?? '',
       ghinNumber: golfer.ghinNumber ? String(golfer.ghinNumber) : '',
       state: state ?? '',
       club: club ?? '',
@@ -68,48 +69,53 @@ export default function Dashboard() {
       return;
     }
 
+    const targetGolferName = activeGolfer.clubCaddieName;
     const parsedGhin = data ? Number.parseInt(data.ghinNumber, 10) : null;
 
-    const response = await fetch('/api/db', {
+    setIsMatchModalOpen(false);
+    setActiveGolfer(null);
+    setMatchModalInitialValues(null);
+    setUpdatingGolferName(targetGolferName);
+
+    try {
+      const response = await fetch('/api/db', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: activeGolfer.clubCaddieName,
+          name: targetGolferName,
           ghin: parsedGhin,
-      }),
-    });
-    
-    if (!response.ok) {
-      await fetch('/api/db', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: activeGolfer.clubCaddieName,
-          ghin: parsedGhin,
-      }),
-    });
-    }
+        }),
+      });
 
-    if (!parsedGhin) {
-      setScores((currentScores) =>
-        currentScores
-          ? currentScores.map((golfer) =>
-              golfer.clubCaddieName === activeGolfer.clubCaddieName
-                ? {
-                    ...golfer,
-                    matchedFirstName: undefined,
-                    matchedLastName: undefined,
-                    ghinNumber: undefined,
-                    status: 'unmatched',
-                    score: undefined
-                  }
-                : golfer
-            )
-          : currentScores
-      );
-    }
-    else {
-      try {
+      if (!response.ok) {
+        await fetch('/api/db', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: targetGolferName,
+            ghin: parsedGhin,
+          }),
+        });
+      }
+
+      if (!parsedGhin) {
+        setScores((currentScores) =>
+          currentScores
+            ? currentScores.map((golfer) =>
+                golfer.clubCaddieName === targetGolferName
+                  ? {
+                      ...golfer,
+                      matchedFirstName: undefined,
+                      matchedLastName: undefined,
+                      ghinNumber: undefined,
+                      status: 'unmatched',
+                      score: undefined,
+                    }
+                  : golfer
+              )
+            : currentScores
+        );
+      } else {
         const response = await fetch(`/api/scoreboard/${parsedGhin}?date=${encodeURIComponent(date)}`);
         if (!response.ok) {
           const result = await response.json();
@@ -120,30 +126,27 @@ export default function Dashboard() {
         const refreshedScore = body.score;
 
         setScores((currentScores) =>
-        currentScores
-          ? currentScores.map((golfer) =>
-              golfer.clubCaddieName === activeGolfer.clubCaddieName
-                ? {
-                    ...golfer,
-                    matchedFirstName: data?.firstName,
-                    matchedLastName: data?.lastName,
-                    ghinNumber: Number.isNaN(parsedGhin) ? undefined : parsedGhin,
-                    status: refreshedScore ? 'matched' : 'no-score',
-                    score: refreshedScore ?? undefined
-                  }
-                : golfer
-            )
-          : currentScores
-      );
-
-      } catch (refreshError) {
-        setError(refreshError instanceof Error ? refreshError.message : 'Unknown error occurred while refreshing scores.');
+          currentScores
+            ? currentScores.map((golfer) =>
+                golfer.clubCaddieName === targetGolferName
+                  ? {
+                      ...golfer,
+                      matchedFirstName: data?.firstName,
+                      matchedLastName: data?.lastName,
+                      ghinNumber: Number.isNaN(parsedGhin) ? undefined : parsedGhin,
+                      status: refreshedScore ? 'matched' : 'no-score',
+                      score: refreshedScore ?? undefined,
+                    }
+                  : golfer
+              )
+            : currentScores
+        );
       }
+    } catch (refreshError) {
+      setError(refreshError instanceof Error ? refreshError.message : 'Unknown error occurred while refreshing scores.');
+    } finally {
+      setUpdatingGolferName(null);
     }
-
-    setIsMatchModalOpen(false);
-    setActiveGolfer(null);
-    setMatchModalInitialValues(null);
   };
 
   const handleMatchModalOpenChange = (open: boolean) => {
@@ -191,9 +194,14 @@ export default function Dashboard() {
             <span className="font-semibold">{matchedCount}</span> matched,{' '}
             <span className="font-semibold">{scoreCount}</span> with scores.
           </p>
-          <div className="grid">
+          <div className="grid gap-3">
             {scores.map((golfer) => (
-              <GolferScoreCard key={golfer.clubCaddieName} golfer={golfer} onMatchClick={handleOpenMatchModal} />
+              <GolferScoreCard
+                key={golfer.clubCaddieName}
+                golfer={golfer}
+                isUpdating={golfer.clubCaddieName === updatingGolferName}
+                onMatchClick={handleOpenMatchModal}
+              />
             ))}
           </div>
         </div>
