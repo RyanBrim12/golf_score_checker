@@ -42,13 +42,13 @@ export async function GET(request: Request) {
     const ghinState = process.env.GHIN_STATE!;
     const ghinCountry = process.env.GHIN_COUNTRY!;
     const ghinClubId = process.env.GHIN_CLUB_ID!;
+    const ghinClub = process.env.GHIN_CLUB!;
     const ghinCourseId = process.env.GHIN_COURSE_ID!;
     const session = await createClubCaddieSession(clubId, clubUsername, clubPassword);
     const html = await fetchTeeSheetHtml(session, sheetId, date);
     const golfers = parseGolfersFromTeeSheet(html);
     const scores = await fetchGolferScores(date, golfers, ghinUsername, ghinPassword, ghinState, ghinClubId, ghinCountry, ghinCourseId);
-
-    return NextResponse.json(scores);
+    return NextResponse.json({scores, state: ghinState, club: ghinClub});
   } catch (error: unknown) {
     return NextResponse.json(
       { message: error instanceof Error ? error.message : 'Unexpected server error' },

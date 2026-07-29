@@ -54,6 +54,7 @@ export function parseGolfersFromTeeSheet(html: string): ClubCaddieGolfer[] {
     const parts = value.split(/\s+/).filter(Boolean);
     return {
       clubCaddieName: value,
+      name: value,
       firstName: parts[0] ?? '',
       lastName: parts[1] ?? '',
     };

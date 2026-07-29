@@ -34,3 +34,6 @@ next-env.d.ts
 # Production
 .github/
 test.*
+
+# Database
+lib/data/
