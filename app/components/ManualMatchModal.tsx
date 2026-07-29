@@ -179,7 +179,7 @@ export function ManualMatchModal({
             </label>
             <input
               id="ghinNumber"
-              type="text"
+              type="number"
               placeholder="Enter your GHIN number"
               value={ghinNumber}
               onChange={(e) => setGhinNumber(e.target.value)}
