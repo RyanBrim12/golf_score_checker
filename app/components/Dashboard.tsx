@@ -41,7 +41,7 @@ export default function Dashboard() {
     [scores]
   );
 
-  const scoreCount = useMemo(() => (scores ? scores.length - scores.filter((item) => item.status === 'no-score').length : 0), [scores]);
+  const scoreCount = useMemo(() => (scores ? scores.filter((item) => item.status === 'matched').length : 0), [scores]);
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
