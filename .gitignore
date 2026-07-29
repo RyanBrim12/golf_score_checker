@@ -2,7 +2,6 @@
 node_modules/
 npm-debug.log
 yarn-error.log
-tsconfig.tsbuildinfo
 
 # IDE
 .vscode/
@@ -27,6 +26,10 @@ Thumbs.db
 
 # Next.js
 .next/
+
+# Typescript
+*.tsbuildinfo
+next-env.d.ts
 
 # Production
 .github/
