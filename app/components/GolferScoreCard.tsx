@@ -29,15 +29,15 @@ export default function GolferScoreCard({ golfer, onMatchClick }: GolferScoreCar
 
   return (
     <div className={`rounded-xl border border-slate-200 p-3 shadow-sm ${statusClass}`}>
-      <div className="grid items-center gap-3 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_minmax(0,1.1fr)]">
+      <div className="grid items-center gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_minmax(0,1.1fr)]">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-slate-900">{golfer.clubCaddieName}</h2>
+          <p className="text-sm font-semibold text-slate-900">{golfer.clubCaddieName}</p>
         </div>
         <div className="min-w-0">
           <button
             type="button"
             onClick={() => onMatchClick?.(golfer)}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-sm text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
           >
             <span className="font-semibold">Match:</span>{' '}
             {golfer.matchedFirstName ? `${golfer.matchedFirstName} ${golfer.matchedLastName}` : 'No match'}
