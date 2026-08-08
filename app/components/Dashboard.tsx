@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [state, setState] = useState('');
   const [club, setClub] = useState('');
   const [scores, setScores] = useState<GolferScore[] | null>(null);
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
@@ -46,12 +47,44 @@ export default function Dashboard() {
     }
   };
 
+  const filteredScores = useMemo(() => {
+    if (!scores) return [];
+    const normalizedSearch = search.trim().toLowerCase();
+    if (!normalizedSearch) return scores;
+
+    return scores.filter((golfer) => {
+      const firstName = golfer.firstName ?? '';
+      const lastName = golfer.lastName ?? '';
+      const matchedName = `${golfer.matchedFirstName ?? ''} ${golfer.matchedLastName ?? ''}`.trim();
+      const searchableValues = [firstName, lastName, matchedName];
+
+      return searchableValues.some((value) => value.toLowerCase().includes(normalizedSearch));
+    });
+  }, [scores, search]);
+
+  const sortedScores = useMemo(() => {
+  return [...filteredScores].sort((a, b) => {
+    if (a.status !== b.status) {
+      if (a.status === 'no-score') return -1;
+      if (b.status === 'no-score') return 1;
+      if (a.status === 'matched') return -1;
+      return 1;
+    }
+    if (a.lastName !== b.lastName) return a.lastName < b.lastName ? -1 : 1;
+    if (a.firstName !== b.firstName) return a.firstName < b.firstName ? -1 : 1;
+    return 0;
+  });
+}, [filteredScores]);
+
   const matchedCount = useMemo(
-    () => (scores ? scores.length - scores.filter((item) => item.status === 'unmatched').length : 0),
-    [scores]
+    () => filteredScores.length - filteredScores.filter((item) => item.status === 'unmatched').length,
+    [filteredScores]
   );
 
-  const scoreCount = useMemo(() => (scores ? scores.filter((item) => item.status === 'matched').length : 0), [scores]);
+  const scoreCount = useMemo(
+    () => filteredScores.filter((item) => item.status === 'matched').length,
+    [filteredScores]
+  );
 
   const handleOpenMatchModal = (golfer: GolferScore) => {
     setActiveGolfer(golfer);
@@ -202,35 +235,49 @@ export default function Dashboard() {
         <ScoreboardSkeleton />
       ) : scores ? (
         <div className="mt-6">
-          <p className="mb-4 text-sm text-slate-700">
-            <span className="font-semibold">{scores.length}</span> golfers found,{' '}
-            <span className="font-semibold">{matchedCount}</span> matched,{' '}
-            <span className="font-semibold">{scoreCount}</span> with scores.
-          </p>
-          <div className="grid gap-3">
-            {scores.sort((a, b) => {
-              if (a.lastName < b.lastName) return -1;
-              if (a.lastName === b.lastName) {
-                if (a.firstName < b.firstName) return -1;
-                if (a.firstName > b.firstName) return 1;
-                return 0;
-              }
-              return 1;
-            }).sort((a, b) => {
-              if (a.status === b.status) return 0;
-              if (a.status === 'no-score') return -1;
-              if (b.status === 'no-score') return 1;
-              if (a.status === 'matched') return -1;
-              return 1;
-            }).map((golfer) => (
-              <GolferScoreCard
-                key={golfer.clubCaddieName}
-                golfer={golfer}
-                isUpdating={golfer.clubCaddieName === updatingGolferName}
-                onMatchClick={handleOpenMatchModal}
-              />
-            ))}
+          <div className="mb-4 flex flex-col items-center justify-between gap-2 sm:flex-row sm:items-center">
+            <p className="text-sm text-slate-700">
+              <span className="font-semibold">{filteredScores.length}</span> golfers shown
+              {search ? (
+                <>
+                  {' '}of <span className="font-semibold">{scores.length}</span>
+                </>
+              ) : null}
+              , <span className="font-semibold">{matchedCount}</span> matched,{' '}
+              <span className="font-semibold">{scoreCount}</span> with scores.
+            </p>
+            <div className="">
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                  <svg className="h-4 w-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.386a1 1 0 01-1.414 1.415l-4.387-4.387zm-4.9.68a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <input
+                  id="search"
+                  type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search by name..."
+                  className="py-1 rounded-xl border border-slate-200 bg-slate-50 px-4 pl-11 pr-4 text-slate-900 shadow-sm outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
           </div>
+          {filteredScores.length > 0 ? (
+            <div className="grid gap-3">
+                {sortedScores.map((golfer) => (
+                  <GolferScoreCard
+                    key={golfer.clubCaddieName}
+                    golfer={golfer}
+                    isUpdating={golfer.clubCaddieName === updatingGolferName}
+                    onMatchClick={handleOpenMatchModal}
+                  />
+                ))}
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-slate-600">No golfers match your search.</p>
+          )}
         </div>
       ) : (
         <p className="mt-6 text-sm text-slate-600">Select a date and click Fetch Scores to load the scoreboard.</p>
