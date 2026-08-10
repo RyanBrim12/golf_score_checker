@@ -306,15 +306,16 @@ export function ManualMatchModal({
   const jumpBkDisabled  = currentPage === 0 || isFetchingMore;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-[500px] mx-4">
-        <div className="border-b px-6 py-4">
-          <h2 className="text-lg font-semibold">Match GHIN Account</h2>
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-end sm:items-center justify-center">
+      <div className="bg-white rounded-t-lg sm:rounded-lg shadow-lg w-full sm:max-w-[500px] sm:mx-4 h-[92vh] sm:h-auto sm:max-h-[85vh] flex flex-col">
+        <div className="border-b px-4 py-3 sm:px-6 sm:py-4 shrink-0">
+          <h2 className="text-base sm:text-lg font-semibold">Match GHIN Account</h2>
         </div>
 
-        <div className="p-6 space-y-4">
-          <div className='flex gap-5 mb-5'>
-            <div>
+        <div className="p-4 sm:p-6 space-y-3 sm:space-y-4 overflow-y-auto flex-1">
+          {/* Name row — stacks on mobile, side-by-side from sm up */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-5">
+            <div className="flex-1">
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
                 First Name
               </label>
@@ -329,7 +330,7 @@ export function ManualMatchModal({
               />
             </div>
 
-            <div>
+            <div className="flex-1">
               <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
                 Last Name
               </label>
@@ -345,6 +346,7 @@ export function ManualMatchModal({
             </div>
           </div>
 
+          {/* GHIN number — collapsed into a details toggle on mobile could go further, but keeping visible since it's a primary search field */}
           <div>
             <label htmlFor="ghinNumber" className="block text-sm font-medium text-gray-700 mb-1">
               GHIN Number
@@ -360,15 +362,16 @@ export function ManualMatchModal({
             />
           </div>
 
-          <div className='flex gap-5 mb-5'>
-            <div className='w-20'>
+          {/* State/Club row — State shrinks to a fixed narrow width even on mobile since it's max 2 chars */}
+          <div className="flex gap-3 sm:gap-5">
+            <div className="w-16 sm:w-20 shrink-0">
               <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
                 State
               </label>
               <input
                 id="state"
                 type="text"
-                placeholder="State"
+                placeholder="ST"
                 value={state}
                 onChange={(e) => setState(e.target.value)}
                 disabled={isLoading}
@@ -376,7 +379,7 @@ export function ManualMatchModal({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
             </div>
-            <div className='flex-1'>
+            <div className="flex-1 min-w-0">
               <label htmlFor="club" className="block text-sm font-medium text-gray-700 mb-1">
                 Club
               </label>
@@ -396,12 +399,12 @@ export function ManualMatchModal({
 
           <div className="space-y-2">
             <p className="text-sm font-medium text-slate-700">Select the correct golfer account</p>
-            <ul className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3 pr-1 text-sm text-slate-600">
+            <ul className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-2 sm:p-3 pr-1 text-sm text-slate-600">
               <li>
                 <button
                   type="button"
                   onClick={() => handleSelectResult(null)}
-                  className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                  className="w-full rounded border border-slate-200 bg-white px-3 py-2.5 sm:py-2 text-left transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:bg-blue-50"
                 >
                   No Match
                 </button>
@@ -412,29 +415,32 @@ export function ManualMatchModal({
                       <button
                         type="button"
                         onClick={() => handleSelectResult(golfer)}
-                        className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                        className="w-full rounded border border-slate-200 bg-white px-3 py-2.5 sm:py-2 text-left transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:bg-blue-50"
                       >
-                        {golfer.first_name} {golfer.last_name} ({golfer.ghin}) {golfer.club_name}
+                        <span className="block truncate">
+                          {golfer.first_name} {golfer.last_name} ({golfer.ghin})
+                        </span>
+                        <span className="block truncate text-xs text-slate-400 sm:hidden">{golfer.club_name}</span>
+                        <span className="hidden sm:inline"> {golfer.club_name}</span>
                       </button>
                     </li>
                   ))
-                : <li className='text-sm text-slate-500'>Searching...</li>
+                : <li className="text-sm text-slate-500">Searching...</li>
               }
             </ul>
 
             {showPagination && (
               <div className="flex items-center justify-between pt-1 gap-1">
-                {/* Jump back 20 */}
+                {/* Jump ±20 buttons hidden on mobile — Prev/Next covers most cases and saves horizontal space */}
                 <button
                   type="button"
                   onClick={() => setCurrentPage(p => Math.max(0, p - JUMP_SIZE))}
                   disabled={jumpBkDisabled}
-                  className={btnClass}
+                  className={`hidden sm:inline-flex ${btnClass}`}
                 >
                   ⟨⟨ -{JUMP_SIZE}
                 </button>
 
-                {/* Prev */}
                 <button
                   type="button"
                   onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
@@ -444,12 +450,10 @@ export function ManualMatchModal({
                   ← Prev
                 </button>
 
-                {/* Page counter */}
                 <span className="text-xs text-slate-500 shrink-0">
-                  Page {currentPage + 1} of {totalPages}{hasMoreRemotePages ? '+' : ''}
+                  {currentPage + 1}/{totalPages}{hasMoreRemotePages ? '+' : ''}
                 </span>
 
-                {/* Next — shows spinner while fetching the next remote batch */}
                 <button
                   type="button"
                   onClick={() => {
@@ -468,34 +472,39 @@ export function ManualMatchModal({
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                       </svg>
-                      Loading
+                      <span className="hidden sm:inline">Loading</span>
                     </span>
-                  ) : 'Next →'}
+                  ) : (
+                    <>
+                      <span className="sm:hidden">→</span>
+                      <span className="hidden sm:inline">Next →</span>
+                    </>
+                  )}
                 </button>
 
-                {/* Jump forward 20 */}
                 <button
                   type="button"
                   onClick={() => void jumpForward()}
                   disabled={jumpFwdDisabled}
-                  className={btnClass}
+                  className={`hidden sm:inline-flex ${btnClass}`}
                 >
                   +{JUMP_SIZE} ⟩⟩
                 </button>
               </div>
             )}
           </div>
+        </div>
 
-          <div className="flex justify-end gap-2 mt-6">
-            <button
-              type="button"
-              onClick={() => handleOpenChange(false)}
-              disabled={isLoading}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed font-medium"
-            >
-              Cancel
-            </button>
-          </div>
+        {/* Footer pinned to bottom, full-width Cancel on mobile */}
+        <div className="flex justify-end gap-2 border-t px-4 py-3 sm:px-6 sm:py-4 sm:border-t-0 sm:mt-0 shrink-0">
+          <button
+            type="button"
+            onClick={() => handleOpenChange(false)}
+            disabled={isLoading}
+            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:bg-gray-100 disabled:cursor-not-allowed font-medium"
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </div>

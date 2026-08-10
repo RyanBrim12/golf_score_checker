@@ -194,7 +194,7 @@ export default function Dashboard() {
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid md:gap-4 md:grid-cols-2">
         <div className="mb-4 md:mb-0">
           <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="date">
             Tee sheet date
@@ -209,19 +209,18 @@ export default function Dashboard() {
         </div>
         <div className="flex items-end">
           <button
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-500 disabled:opacity-80 md:w-auto shadow-xs"
+            className="flex min-h-[48px] w-full min-w-[144px] items-center justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-xs transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-500 disabled:opacity-80 md:w-auto"
             type="button"
             onClick={handleFetch}
             disabled={loading}
           >
             {loading ? (
-              <>
+              <div className="flex h-5 w-5 items-center justify-center">
                 <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
-                <span>Fetching Scores...</span>
-              </>
+              </div>
             ) : (
               'Fetch Scores'
             )}
@@ -235,8 +234,8 @@ export default function Dashboard() {
         <ScoreboardSkeleton />
       ) : scores ? (
         <div className="mt-6">
-          <div className="mb-4 flex flex-col items-center justify-between gap-2 sm:flex-row sm:items-center">
-            <p className="text-sm text-slate-700">
+          <div className="mb-4 flex flex-col items-center justify-between gap-2 md:flex-row sm:items-center">
+            <p className="text-xs md:text-sm text-slate-700">
               <span className="font-semibold">{filteredScores.length}</span> golfers shown
               {search ? (
                 <>
@@ -246,7 +245,7 @@ export default function Dashboard() {
               , <span className="font-semibold">{matchedCount}</span> matched,{' '}
               <span className="font-semibold">{scoreCount}</span> with scores.
             </p>
-            <div className="">
+            <div className="w-full md:w-auto">
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
                   <svg className="h-4 w-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -259,7 +258,7 @@ export default function Dashboard() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search by name..."
-                  className="py-1 rounded-xl border border-slate-200 bg-slate-50 px-4 pl-11 pr-4 text-slate-900 shadow-sm outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                  className="w-full py-1 rounded-xl border border-slate-200 bg-slate-50 px-4 pl-11 pr-4 text-slate-900 shadow-sm outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
                 />
               </div>
             </div>

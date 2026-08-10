@@ -29,24 +29,26 @@ export default function ScoreboardSkeleton() {
             key={id}
             className="rounded-xl border border-slate-200/80 bg-white/60 p-3 shadow-xs backdrop-blur-xs transition-all"
           >
-            <div className="grid items-center gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_minmax(0,1.1fr)]">
-              {/* Golfer Name */}
-              <div className="min-w-0">
+            <div className="md:hidden">
+              <div className="flex items-center justify-between gap-3">
                 <div className="h-4 w-32 rounded-md bg-slate-200 animate-pulse" />
+                <div className="h-4 w-24 rounded-md bg-slate-200/80 animate-pulse" />
               </div>
-              {/* Match Button */}
+            </div>
+
+            <div className="hidden md:grid md:items-center md:gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_auto]">
               <div className="min-w-0">
-                <div className="h-8 w-full rounded-lg border border-slate-100 bg-slate-100/70 animate-pulse" />
+                <div className="h-4 w-36 rounded-md bg-slate-200 animate-pulse" />
               </div>
-              {/* GHIN Number */}
+              <div className="min-w-0">
+                <div className="h-8 w-full rounded-lg bg-slate-100 animate-pulse" />
+              </div>
               <div className="min-w-0">
                 <div className="h-4 w-24 rounded-md bg-slate-200/80 animate-pulse" />
               </div>
-              {/* Score */}
               <div className="min-w-0">
                 <div className="h-4 w-16 rounded-md bg-slate-200/80 animate-pulse" />
               </div>
-              {/* Status */}
               <div className="flex min-h-5 items-center justify-end">
                 <div className="h-4 w-28 rounded-md bg-slate-200/60 animate-pulse" />
               </div>
