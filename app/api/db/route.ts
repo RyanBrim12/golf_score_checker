@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { getAllMatches, initDb, createMatch, updateMatch } from "@/lib/database";
+import { getAllMatches, createMatch, updateMatch } from "@/lib/database";
 
 export async function GET() {
-  initDb();
-  const users = getAllMatches();
+  const users = await getAllMatches();
   return NextResponse.json(users);
 }
 
@@ -19,7 +18,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = createMatch({ghin, name});
+    const result = await createMatch({ ghin, name });
     if (result) {
       return NextResponse.json(
         { message: 'Match entry created' },
@@ -45,7 +44,7 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const result = updateMatch(name, ghin);
+    const result = await updateMatch(name, ghin);
     if (result) {
       return NextResponse.json(
         { message: 'Match entry updated' },

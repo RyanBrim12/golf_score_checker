@@ -1,102 +1,63 @@
-import Database from "better-sqlite3";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import prisma from './prisma';
 
 export interface Match {
-  ghin: number;
+  ghin: number | null;
   name: string;
 }
 
-const DB_DIR = path.resolve(__dirname, "data");
-const DB_PATH = path.join(DB_DIR, "app.db");
-
-if (!fs.existsSync(DB_DIR)) {
-  fs.mkdirSync(DB_DIR, { recursive: true });
+export async function initDb(): Promise<void> {
+  await prisma.$connect();
 }
 
-const db = new Database(DB_PATH);
-
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
-
-export function initDb(): void {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS ghin_name_matches (
-      ghin  INTEGER,
-      name  TEXT NOT NULL PRIMARY KEY
-    );
-  `);
-}
-
-export function createMatch(match: Match): boolean {
-  const stmt = db.prepare(
-    `INSERT INTO ghin_name_matches (ghin, name) VALUES (@ghin, @name)`
-  );
+export async function createMatch(match: Match): Promise<boolean> {
   try {
-    stmt.run(match);
-  }
-  catch (error: unknown) {
+    await prisma.ghinNameMatch.create({
+      data: match,
+    });
+    return true;
+  } catch (error: unknown) {
     return false;
   }
-  return true;
 }
 
-export function createMatches(matches: Match[]): void {
-  const insert = db.prepare(
-    `INSERT INTO ghin_name_matches (ghin, name) VALUES (@ghin, @name)`
+export async function createMatches(matches: Match[]): Promise<void> {
+  await prisma.$transaction(
+    matches.map((match) => prisma.ghinNameMatch.create({ data: match }))
   );
-  const insertMany = db.transaction((rows: Match[]) => {
-    for (const row of rows) insert.run(row);
-  });
-  insertMany(matches);
 }
 
-export function getMatchByGhin(ghin: number): Match | undefined {
-  return db.prepare(`SELECT * FROM ghin_name_matches WHERE ghin = ?`).get(ghin) as
-    | Match
-    | undefined;
+export async function getMatchByGhin(ghin: number): Promise<Match | null> {
+  const record = await prisma.ghinNameMatch.findFirst({ where: { ghin } });
+  return record ? { ghin: record.ghin, name: record.name } : null;
 }
 
-export function getMatchByName(name: string): Match | undefined {
-  return db.prepare(`SELECT * FROM ghin_name_matches WHERE name = ?`).get(name) as
-    | Match
-    | undefined;
+export async function getMatchByName(name: string): Promise<Match | null> {
+  const record = await prisma.ghinNameMatch.findUnique({ where: { name } });
+  return record ? { ghin: record.ghin, name: record.name } : null;
 }
 
-export function getAllMatches(): Match[] {
-  return db.prepare(`SELECT * FROM ghin_name_matches ORDER BY name`).all() as Match[];
+export async function getAllMatches(): Promise<Match[]> {
+  const records = await prisma.ghinNameMatch.findMany({ orderBy: { name: 'asc' } });
+  return records.map((record) => ({ ghin: record.ghin, name: record.name }));
 }
 
-export function updateMatch(
-  name: string,
-  newGhin: number
-): boolean {
-  const existing = getMatchByName(name);
+export async function updateMatch(name: string, newGhin: number): Promise<boolean> {
+  const existing = await getMatchByName(name);
   if (!existing) return false;
 
-  db.prepare(`UPDATE ghin_name_matches SET ghin = @ghin WHERE name = @name`).run({
-    name,
-    ghin: newGhin,
+  await prisma.ghinNameMatch.update({
+    where: { name },
+    data: { ghin: newGhin },
   });
 
   return true;
 }
 
-export function deleteMatch(name: string): boolean {
-  const info = db.prepare(`DELETE FROM ghin_name_matches WHERE name = ?`).run(name);
-  return info.changes > 0;
+export async function deleteMatch(name: string): Promise<boolean> {
+  const record = await prisma.ghinNameMatch.deleteMany({ where: { name } });
+  return record.count > 0;
 }
 
-export function closeDb(): void {
-  db.close();
-}
-
-const isMain = process.argv[1] === __filename;
-
-if (isMain) {
-  initDb();
+export async function closeDb(): Promise<void> {
+  await prisma.$disconnect();
 }

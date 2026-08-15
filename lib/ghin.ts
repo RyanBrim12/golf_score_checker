@@ -22,8 +22,8 @@ function findBestMatch(firstName: string, golfers: GhinGolfer[]): GhinGolfer | n
 }
 
 async function searchGolfers(ghin: ReturnType<typeof createGhinClient>, name: string, lastName: string, firstName: string, state?: string, clubId?: string, country?: string): Promise<GhinGolfer | null> {
-  const storedMatch = getMatchByName(name);
-  if (storedMatch) {
+  const storedMatch = await getMatchByName(name);
+  if (storedMatch && storedMatch.ghin !== null) {
     const golfer = await ghin.golfers.getOne(storedMatch.ghin);
     if (golfer) {
       return golfer;
@@ -132,7 +132,7 @@ export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[
     }
 
     const ghinNumber = matchedGolfer.ghin;
-    createMatch({ghin: ghinNumber, name: golfer.name});
+    await createMatch({ ghin: ghinNumber, name: golfer.name });
 
     const scoreResponse = await ghin.golfers.getScores(ghinNumber, {
       from_date_played: new Date(date),

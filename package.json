@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "@spicygolf/ghin": "^0.12.1",
-    "better-sqlite3": "^12.11.1",
     "dotenv": "^17.4.2",
     "fuse.js": "^7.4.2",
     "next": "^15.2.0",
@@ -10,12 +9,17 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
     "@types/node": "^26.0.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@types/sqlite3": "^3.1.11",
     "autoprefixer": "^10.5.2",
     "postcss": "^8.5.16",
+    "prisma": "^7.9.1",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1",
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
@@ -24,7 +28,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:migrate:deploy": "prisma migrate deploy --config=./prisma/prisma.config.ts",
+    "migrate:sqlite-to-postgres": "node --experimental-specifier-resolution=node scripts/migrate-sqlite-to-postgres.mjs",
+    "postinstall": "prisma generate"
   },
   "type": "module"
 }
