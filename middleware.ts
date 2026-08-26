@@ -15,7 +15,33 @@ function encodeText(value: string): Uint8Array {
 }
 
 function getClientAddress(request: NextRequest): string {
-  return request.headers.get('x-real-ip')?.trim() || 'shared-client-address';
+  // Use x-forwarded-for first (more reliable with reverse proxies)
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
+  }
+  
+  // Fallback to x-real-ip
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) {
+    return realIp.trim();
+  }
+  
+  // Support Cloudflare
+  const cfIP = request.headers.get('cf-connecting-ip');
+  if (cfIP) {
+    return cfIP.trim();
+  }
+  
+  // Support Vercel
+  const vercelIP = request.headers.get('x-vercel-forwarded-for');
+  if (vercelIP) {
+    return vercelIP.split(',')[0].trim();
+  }
+  
+  // IMPORTANT: Fail-safe - throw error instead of shared bucket
+  // This prevents rate limit bypass by missing headers
+  throw new Error('Unable to determine client IP address - check proxy configuration');
 }
 
 function rateLimit(request: NextRequest): NextResponse | null {
@@ -24,17 +50,28 @@ function rateLimit(request: NextRequest): NextResponse | null {
   const isApiRequest = pathname.startsWith('/api/');
   if (!isSignIn && !isApiRequest) return null;
 
-  const limit = isSignIn ? 10 : 120;
-  const windowMs = isSignIn ? 15 * 60 * 1000 : 60 * 1000;
-  const bucket = isSignIn ? 'signin' : 'api';
-  const result = consumeRateLimit(`${getClientAddress(request)}:${bucket}`, limit, windowMs);
-  if (result.allowed) return null;
+  try {
+    const limit = isSignIn ? 10 : 120;
+    const windowMs = isSignIn ? 15 * 60 * 1000 : 60 * 1000;
+    const bucket = isSignIn ? 'signin' : 'api';
+    const clientAddress = getClientAddress(request);
+    const result = consumeRateLimit(`${clientAddress}:${bucket}`, limit, windowMs);
+    
+    if (result.allowed) return null;
 
-  const response = NextResponse.json({ message: 'Too many requests. Please try again later.' }, { status: 429 });
-  response.headers.set('Retry-After', String(result.retryAfterSeconds));
-  response.headers.set('X-RateLimit-Limit', String(limit));
-  response.headers.set('X-RateLimit-Remaining', String(result.remaining));
-  return response;
+    const response = NextResponse.json({ message: 'Too many requests. Please try again later.' }, { status: 429 });
+    response.headers.set('Retry-After', String(result.retryAfterSeconds));
+    response.headers.set('X-RateLimit-Limit', String(limit));
+    response.headers.set('X-RateLimit-Remaining', String(result.remaining));
+    return response;
+  } catch (error) {
+    // If we can't determine client IP, reject the request to prevent bypass
+    console.error('Rate limiting error:', error);
+    return NextResponse.json(
+      { message: 'Request validation failed.' },
+      { status: 400 }
+    );
+  }
 }
 
 async function hasValidSession(request: NextRequest): Promise<boolean> {
