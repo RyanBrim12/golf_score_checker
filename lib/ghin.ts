@@ -1,6 +1,6 @@
 import Fuse from 'fuse.js';
 import { GhinClient } from '@spicygolf/ghin';
-import { createMatch, getMatchByName } from './database';
+import { createMatch, getCachedMatchByName } from './database';
 import type { ClubCaddieGolfer, GhinGolfer, GolferScore, GhinScoreResponse } from './types';
 
 function createGhinClient(username: string, password: string) {
@@ -22,7 +22,7 @@ function findBestMatch(firstName: string, golfers: GhinGolfer[]): GhinGolfer | n
 }
 
 async function searchGolfers(ghin: ReturnType<typeof createGhinClient>, name: string, lastName: string, firstName: string, state?: string, clubId?: string, country?: string): Promise<GhinGolfer | null> {
-  const storedMatch = await getMatchByName(name);
+  const storedMatch = await getCachedMatchByName(name);
   if (storedMatch && storedMatch.ghin !== null) {
     const golfer = await ghin.golfers.getOne(storedMatch.ghin);
     if (golfer) {

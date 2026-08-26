@@ -1,4 +1,5 @@
 import prisma from './prisma';
+import { revalidateTag, unstable_cache } from 'next/cache';
 
 export interface Match {
   ghin: number | null;
@@ -14,6 +15,7 @@ export async function createMatch(match: Match): Promise<boolean> {
     await prisma.ghinNameMatch.create({
       data: match,
     });
+    revalidateTag('ghin-name-matches');
     return true;
   } catch (error: unknown) {
     return false;
@@ -36,6 +38,17 @@ export async function getMatchByName(name: string): Promise<Match | null> {
   return record ? { ghin: record.ghin, name: record.name } : null;
 }
 
+const getCachedMatchByName = unstable_cache(
+  async (name: string) => getMatchByName(name),
+  ['ghin-name-match-by-name'],
+  {
+    revalidate: 60 * 60,
+    tags: ['ghin-name-matches'],
+  }
+);
+
+export { getCachedMatchByName };
+
 export async function getAllMatches(): Promise<Match[]> {
   const records = await prisma.ghinNameMatch.findMany({ orderBy: { name: 'asc' } });
   return records.map((record) => ({ ghin: record.ghin, name: record.name }));
@@ -49,12 +62,14 @@ export async function updateMatch(name: string, newGhin: number): Promise<boolea
     where: { name },
     data: { ghin: newGhin },
   });
+  revalidateTag('ghin-name-matches');
 
   return true;
 }
 
 export async function deleteMatch(name: string): Promise<boolean> {
   const record = await prisma.ghinNameMatch.deleteMany({ where: { name } });
+  if (record.count > 0) revalidateTag('ghin-name-matches');
   return record.count > 0;
 }
 
