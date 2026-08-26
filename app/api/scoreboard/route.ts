@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClubCaddieSession, fetchTeeSheetHtml, parseGolfersFromTeeSheet } from '@/lib/clubCaddie';
 import { fetchGolferScores } from '@/lib/ghin';
+import { authenticate } from '@/lib/auth';
 
 const REQUIRED_ENV = [
   'CLUB_CADDIE_CLUB_ID',
@@ -23,6 +24,9 @@ function validateEnv() {
 }
 
 export async function GET(request: Request) {
+  const authError = authenticate(request);
+  if (authError) return authError;
+
   try {
     validateEnv();
 

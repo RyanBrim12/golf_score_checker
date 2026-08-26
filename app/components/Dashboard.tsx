@@ -11,7 +11,12 @@ const yesterdayDate = new Date(today);
 yesterdayDate.setDate(today.getDate() - 1);
 const yesterday = yesterdayDate.toISOString().slice(0, 10);
 
-export default function Dashboard() {
+interface DashboardProps {
+  userRole?: 'viewer' | 'admin' | null;
+}
+
+export default function Dashboard({ userRole = null }: DashboardProps) {
+  const isViewer = userRole === 'viewer';
   const [date, setDate] = useState(yesterday);
   const [state, setState] = useState('');
   const [club, setClub] = useState('');
@@ -22,6 +27,7 @@ export default function Dashboard() {
   const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
   const [activeGolfer, setActiveGolfer] = useState<GolferScore | null>(null);
   const [matchModalInitialValues, setMatchModalInitialValues] = useState<ManualMatchData | null>(null);
+  const [viewerMatchDetail, setViewerMatchDetail] = useState<GolferScore | null>(null);
   const [updatingGolferName, setUpdatingGolferName] = useState<string | null>(null);
 
   const handleFetch = async () => {
@@ -95,6 +101,13 @@ export default function Dashboard() {
       state: state ?? '',
       club: club ?? '',
     });
+
+    if (isViewer) {
+      setViewerMatchDetail(golfer);
+      setIsMatchModalOpen(true);
+      return;
+    }
+
     setIsMatchModalOpen(true);
   };
 
@@ -189,6 +202,7 @@ export default function Dashboard() {
     if (!open) {
       setActiveGolfer(null);
       setMatchModalInitialValues(null);
+      setViewerMatchDetail(null);
     }
   };
 
@@ -282,12 +296,86 @@ export default function Dashboard() {
         <p className="mt-6 text-sm text-slate-600">Select a date and click Fetch Scores to load the scoreboard.</p>
       )}
 
-      <ManualMatchModal
-        open={isMatchModalOpen}
-        onOpenChange={handleMatchModalOpenChange}
-        onSubmit={handleMatchSubmit}
-        initialValues={matchModalInitialValues}
-      />
+      {isMatchModalOpen && viewerMatchDetail && isViewer ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center">
+          <div className="w-full rounded-t-lg bg-white shadow-lg sm:mx-4 sm:max-w-[500px] sm:rounded-lg">
+            <div className="border-b px-4 py-3 sm:px-6 sm:py-4">
+              <h2 className="text-base font-semibold sm:text-lg">Match Details</h2>
+            </div>
+
+            <div className="space-y-4 p-4 sm:p-6">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Golfer</p>
+                <p className="mt-1 text-lg font-semibold text-slate-900">{viewerMatchDetail.clubCaddieName}</p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Matched player</p>
+                  <p className="mt-1 text-sm text-slate-800">
+                    {viewerMatchDetail.matchedFirstName && viewerMatchDetail.matchedLastName
+                      ? `${viewerMatchDetail.matchedFirstName} ${viewerMatchDetail.matchedLastName}`
+                      : 'No match assigned'}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">GHIN</p>
+                  <p className="mt-1 text-sm text-slate-800">
+                    {viewerMatchDetail.ghinNumber ?? '—'}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">State</p>
+                  <p className="mt-1 text-sm text-slate-800">{state || '—'}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Club</p>
+                  <p className="mt-1 text-sm text-slate-800">{club || '—'}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Status</p>
+                  <p className="mt-1 text-sm text-slate-800">
+                    {viewerMatchDetail.status === 'matched'
+                      ? 'Matched'
+                      : viewerMatchDetail.status === 'unmatched'
+                        ? 'Unmatched'
+                        : viewerMatchDetail.status === 'no-score'
+                          ? 'No score available'
+                          : 'Needs attention'}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Score</p>
+                  <p className="mt-1 text-sm text-slate-800">{viewerMatchDetail.score ?? '—'}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end border-t px-4 py-3 sm:px-6 sm:py-4">
+              <button
+                type="button"
+                onClick={() => handleMatchModalOpenChange(false)}
+                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <ManualMatchModal
+          open={isMatchModalOpen}
+          onOpenChange={handleMatchModalOpenChange}
+          onSubmit={handleMatchSubmit}
+          initialValues={matchModalInitialValues}
+        />
+      )}
     </div>
   );
 }

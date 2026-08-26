@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchScoreByGhin } from '@/lib/ghin';
+import { authenticate } from '@/lib/auth';
 
 const REQUIRED_ENV = [
   'GHIN_USERNAME',
@@ -15,6 +16,9 @@ function validateEnv() {
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ ghin: string }> }) {
+  const authError = authenticate(request);
+  if (authError) return authError;
+
   try {
     validateEnv();
 

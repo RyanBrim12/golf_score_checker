@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { GhinClient } from '@spicygolf/ghin';
 import { parseGhinScoreError } from '@/lib/ghin';
+import { authenticate } from '@/lib/auth';
 
 const REQUIRED_ENV = ['GHIN_USERNAME', 'GHIN_PASSWORD'];
 
@@ -12,6 +13,9 @@ function validateEnv() {
 }
 
 export async function GET(request: Request) {
+  const authError = authenticate(request);
+  if (authError) return authError;
+
   try {
     validateEnv();
 

@@ -29,6 +29,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "generate:auth-hash": "node scripts/generate-auth-hash.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:migrate:deploy": "prisma migrate deploy --config=./prisma/prisma.config.ts",

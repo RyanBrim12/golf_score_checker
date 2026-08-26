@@ -1,12 +1,23 @@
 import { NextResponse } from "next/server";
 import { getAllMatches, createMatch, updateMatch } from "@/lib/database";
+import { authenticate } from "@/lib/auth";
+import { requireSameOrigin } from "@/lib/csrf";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const authError = authenticate(request);
+  if (authError) return authError;
+
   const users = await getAllMatches();
   return NextResponse.json(users);
 }
 
 export async function POST(request: Request) {
+  const csrfError = requireSameOrigin(request);
+  if (csrfError) return csrfError;
+
+  const authError = authenticate(request, 'admin');
+  if (authError) return authError;
+
     const body = await request.json();
     const name = typeof body?.name === 'string' ? body.name.trim() : '';
     const ghin = typeof body?.ghin === 'number' || body?.ghin === null ? body.ghin : undefined;
@@ -33,6 +44,12 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const csrfError = requireSameOrigin(request);
+  if (csrfError) return csrfError;
+
+  const authError = authenticate(request, 'admin');
+  if (authError) return authError;
+
     const body = await request.json();
     const name = typeof body?.name === 'string' ? body.name.trim() : '';
     const ghin = typeof body?.ghin === 'number' || body?.ghin === null ? body.ghin : undefined;
