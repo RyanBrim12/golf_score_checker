@@ -23,7 +23,7 @@ export default function SignInPage() {
       });
 
       if (!response.ok) {
-        setError('Invalid username or password.');
+        setError(response.status === 429 ? 'Too many sign-in attempts. Please try again later.' : 'Invalid username or password.');
         setIsSubmitting(false);
         return;
       }
