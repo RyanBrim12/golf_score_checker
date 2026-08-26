@@ -116,13 +116,13 @@ function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, sco
   };
 }
 
-export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[], username: string, password: string, state?: string, clubId?: string, country?: string, courseId?: string): Promise<GolferScore[]> {
+export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[], username: string, password: string, state?: string, clubId?: string, country?: string, courseId?: string, requestId?: string): Promise<GolferScore[]> {
   const ghin = createGhinClient(username, password);
   const results: GolferScore[] = [];
 
-  for (const golfer of golfers) {
+  for (const [golferIndex, golfer] of golfers.entries()) {
     const matchedGolfer = await searchGolfers(ghin, golfer.name, golfer.lastName, golfer.firstName, state, clubId, country).catch((error: unknown) => {
-      console.error('Error thrown while matching', golfer, error);
+      console.error('Error thrown while matching golfer', { requestId, golferIndex, error });
       return null;
     });
 

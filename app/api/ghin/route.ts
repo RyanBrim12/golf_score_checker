@@ -3,6 +3,7 @@ import { GhinClient } from '@spicygolf/ghin';
 import type { GhinGolfer } from '@/lib/types';
 import { parseGhinGolferError } from '@/lib/ghin';
 import { authenticate } from '@/lib/auth';
+import { createRequestId, internalServerError } from '@/lib/request';
 
 const REQUIRED_ENV = ['GHIN_USERNAME', 'GHIN_PASSWORD'];
 
@@ -16,6 +17,7 @@ function validateEnv() {
 export async function POST(request: Request) {
   const authError = authenticate(request);
   if (authError) return authError;
+  const requestId = createRequestId();
 
   try {
     validateEnv();
@@ -73,9 +75,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ golfers: [] });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { message: error instanceof Error ? error.message : 'Unexpected server error' },
-      { status: 500 }
-    );
+    return internalServerError(requestId, error);
   }
 }

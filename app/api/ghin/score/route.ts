@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { GhinClient } from '@spicygolf/ghin';
 import { parseGhinScoreError } from '@/lib/ghin';
 import { authenticate } from '@/lib/auth';
+import { createRequestId, internalServerError } from '@/lib/request';
+import { isValidScoreDate, parsePositiveGhin } from '@/lib/validation';
 
 const REQUIRED_ENV = ['GHIN_USERNAME', 'GHIN_PASSWORD'];
 
@@ -15,24 +17,26 @@ function validateEnv() {
 export async function GET(request: Request) {
   const authError = authenticate(request);
   if (authError) return authError;
+  const requestId = createRequestId();
 
   try {
-    validateEnv();
-
     const { searchParams } = new URL(request.url);
     const ghinNumber = searchParams.get('ghin');
     const date = searchParams.get('date');
 
-    if (!ghinNumber || !date) {
-      return NextResponse.json({ message: 'Missing required query parameters: ghin and date' }, { status: 400 });
+    const parsedGhin = parsePositiveGhin(ghinNumber);
+    if (parsedGhin === null || !isValidScoreDate(date)) {
+      return NextResponse.json({ message: 'Invalid ghin or date. Use a positive integer GHIN and a valid date within the last 10 years.' }, { status: 400 });
     }
+
+    validateEnv();
 
     const client = new GhinClient({
       username: process.env.GHIN_USERNAME!,
       password: process.env.GHIN_PASSWORD!,
     });
 
-    const scoreResponse = await client.golfers.getScores(Number(ghinNumber), {
+    const scoreResponse = await client.golfers.getScores(parsedGhin, {
       from_date_played: new Date(date),
       to_date_played: new Date(date),
     }).catch((error: unknown) => parseGhinScoreError(error));
@@ -50,9 +54,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ score: scoreEntry.adjusted_gross_score, status: 'matched' });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { message: error instanceof Error ? error.message : 'Unexpected server error' },
-      { status: 500 }
-    );
+    return internalServerError(requestId, error);
   }
 }

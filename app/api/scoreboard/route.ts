@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClubCaddieSession, fetchTeeSheetHtml, parseGolfersFromTeeSheet } from '@/lib/clubCaddie';
 import { fetchGolferScores } from '@/lib/ghin';
 import { authenticate } from '@/lib/auth';
+import { createRequestId, internalServerError } from '@/lib/request';
+import { isValidScoreDate } from '@/lib/validation';
 
 const REQUIRED_ENV = [
   'CLUB_CADDIE_CLUB_ID',
@@ -26,16 +28,17 @@ function validateEnv() {
 export async function GET(request: Request) {
   const authError = authenticate(request);
   if (authError) return authError;
+  const requestId = createRequestId();
 
   try {
-    validateEnv();
-
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
 
-    if (!date) {
-      return NextResponse.json({ message: 'Missing required query parameter: date' }, { status: 400 });
+    if (!isValidScoreDate(date)) {
+      return NextResponse.json({ message: 'Invalid date. Use a valid date within the last 10 years.' }, { status: 400 });
     }
+
+    validateEnv();
 
     const clubId = process.env.CLUB_CADDIE_CLUB_ID!;
     const clubUsername = process.env.CLUB_CADDIE_USERNAME!;
@@ -51,12 +54,9 @@ export async function GET(request: Request) {
     const session = await createClubCaddieSession(clubId, clubUsername, clubPassword);
     const html = await fetchTeeSheetHtml(session, sheetId, date);
     const golfers = parseGolfersFromTeeSheet(html);
-    const scores = await fetchGolferScores(date, golfers, ghinUsername, ghinPassword, ghinState, ghinClubId, ghinCountry, ghinCourseId);
+    const scores = await fetchGolferScores(date, golfers, ghinUsername, ghinPassword, ghinState, ghinClubId, ghinCountry, ghinCourseId, requestId);
     return NextResponse.json({scores, state: ghinState, club: ghinClub});
   } catch (error: unknown) {
-    return NextResponse.json(
-      { message: error instanceof Error ? error.message : 'Unexpected server error' },
-      { status: 500 }
-    );
+    return internalServerError(requestId, error);
   }
 }
