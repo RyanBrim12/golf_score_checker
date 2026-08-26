@@ -3,21 +3,21 @@
     "@spicygolf/ghin": "^0.12.1",
     "dotenv": "^17.4.2",
     "fuse.js": "^7.4.2",
-    "next": "^15.2.0",
+    "next": "^15.5.21",
     "node-html-parser": "^8.0.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@prisma/adapter-pg": "^7.9.1",
-    "@prisma/client": "^7.9.1",
+    "@prisma/adapter-pg": "6.12.0",
+    "@prisma/client": "6.12.0",
     "@types/node": "^26.0.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@types/sqlite3": "^3.1.11",
     "autoprefixer": "^10.5.2",
-    "postcss": "^8.5.16",
-    "prisma": "^7.9.1",
+    "postcss": "^8.5.23",
+    "prisma": "6.12.0",
     "sqlite": "^5.1.1",
     "sqlite3": "^6.0.1",
     "tailwindcss": "^3.4.17",
@@ -36,5 +36,10 @@
     "migrate:sqlite-to-postgres": "node --experimental-specifier-resolution=node scripts/migrate-sqlite-to-postgres.mjs",
     "postinstall": "prisma generate"
   },
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "nanoid": "^3.3.18",
+    "postcss": "^8.5.23",
+    "sharp": "^0.35.0"
+  }
 }
