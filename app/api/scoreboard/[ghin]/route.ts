@@ -38,8 +38,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const ghinUsername = process.env.GHIN_USERNAME!;
     const ghinPassword = process.env.GHIN_PASSWORD!;
     const ghinCourseId = process.env.GHIN_COURSE_ID!;
-    const score = await fetchScoreByGhin(ghin, date, ghinUsername, ghinPassword, ghinCourseId);
-    return NextResponse.json({score});
+    const scoreResult = await fetchScoreByGhin(ghin, date, ghinUsername, ghinPassword, ghinCourseId);
+    return NextResponse.json({ score: scoreResult?.score ?? null, postedAt: scoreResult?.postedAt ?? null });
   } catch (error: unknown) {
     return internalServerError(requestId, error);
   }

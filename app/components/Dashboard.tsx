@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import GolferScoreCard from './GolferScoreCard';
 import { ManualMatchModal, type ManualMatchData } from './ManualMatchModal';
 import ScoreboardSkeleton from './ScoreboardSkeleton';
-import type { GhinGolfer, GolferScore } from '@/lib/types';
+import type { GolferScore } from '@/lib/types';
 
 const today = new Date();
 const yesterdayDate = new Date(today);
@@ -183,6 +183,7 @@ export default function Dashboard({ userRole = null }: DashboardProps) {
                       ghinNumber: Number.isNaN(parsedGhin) ? undefined : parsedGhin,
                       status: refreshedScore ? 'matched' : 'no-score',
                       score: refreshedScore ?? undefined,
+                      postedAt: body.postedAt ?? null,
                     }
                   : golfer
               )
@@ -208,8 +209,8 @@ export default function Dashboard({ userRole = null }: DashboardProps) {
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="grid md:gap-4 md:grid-cols-2">
-        <div className="mb-4 md:mb-0">
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+        <div>
           <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="date">
             Tee sheet date
           </label>
@@ -221,9 +222,9 @@ export default function Dashboard({ userRole = null }: DashboardProps) {
             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-slate-900 shadow-sm outline-none ring-0 focus:border-blue-500"
           />
         </div>
-        <div className="flex items-end">
+        <div>
           <button
-            className="flex min-h-[48px] w-full min-w-[144px] items-center justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-xs transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-500 disabled:opacity-80 md:w-auto"
+            className="flex min-h-[48px] w-full min-w-[168px] items-center justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-xs transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-500 disabled:opacity-80 md:w-auto"
             type="button"
             onClick={handleFetch}
             disabled={loading}
@@ -259,7 +260,7 @@ export default function Dashboard({ userRole = null }: DashboardProps) {
               , <span className="font-semibold">{matchedCount}</span> matched,{' '}
               <span className="font-semibold">{scoreCount}</span> with scores.
             </p>
-            <div className="w-full md:w-auto">
+            <div className="w-full md:w-[280px]">
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
                   <svg className="h-4 w-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -279,14 +280,14 @@ export default function Dashboard({ userRole = null }: DashboardProps) {
           </div>
           {filteredScores.length > 0 ? (
             <div className="grid gap-3">
-                {sortedScores.map((golfer) => (
-                  <GolferScoreCard
-                    key={golfer.clubCaddieName}
-                    golfer={golfer}
-                    isUpdating={golfer.clubCaddieName === updatingGolferName}
-                    onMatchClick={handleOpenMatchModal}
-                  />
-                ))}
+              {sortedScores.map((golfer) => (
+                <GolferScoreCard
+                  key={golfer.clubCaddieName}
+                  golfer={golfer}
+                  isUpdating={golfer.clubCaddieName === updatingGolferName}
+                  onMatchClick={handleOpenMatchModal}
+                />
+              ))}
             </div>
           ) : (
             <p className="mt-6 text-sm text-slate-600">No golfers match your search.</p>

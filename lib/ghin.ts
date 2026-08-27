@@ -80,7 +80,7 @@ async function searchGolfers(ghin: ReturnType<typeof createGhinClient>, name: st
   return null;
 }
 
-function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, score?: number | null, message?: string): GolferScore {
+function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, score?: number | null, message?: string, postedAt?: string | Date | null): GolferScore {
   if (!bestMatch) {
     return {
       clubCaddieName: golfer.clubCaddieName,
@@ -112,6 +112,7 @@ function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, sco
     matchedLastName: bestMatch.last_name,
     ghinNumber: bestMatch.ghin,
     score,
+    postedAt: postedAt instanceof Date ? postedAt.toISOString() : postedAt,
     status: 'matched',
   };
 }
@@ -147,7 +148,8 @@ export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[
     }
 
     const score = scoreResponse?.scores?.[0]?.adjusted_gross_score ?? null;
-    results.push(formatScoreResult(golfer, matchedGolfer, score));
+    const postedAt = scoreResponse?.scores?.[0]?.posted_at ?? null;
+    results.push(formatScoreResult(golfer, matchedGolfer, score, undefined, postedAt));
   }
 
   return results;
@@ -189,7 +191,7 @@ export function parseGhinScoreError(error: unknown): GhinScoreResponse | undefin
   return undefined;
 }
 
-export async function fetchScoreByGhin(ghin: number, date: string, username: string, password: string, courseId?: string): Promise<number | null> {
+export async function fetchScoreByGhin(ghin: number, date: string, username: string, password: string, courseId?: string): Promise<{ score: number; postedAt: string | null } | null> {
   const ghinClient = createGhinClient(username, password);
   const scoreResponse = await ghinClient.golfers.getScores(ghin, {
       from_date_played: new Date(date),
@@ -202,5 +204,12 @@ export async function fetchScoreByGhin(ghin: number, date: string, username: str
       return null
 
     const score = scoreResponse?.scores?.[0]?.adjusted_gross_score ?? null;
-    return score;
+    if (score === null) return null;
+
+    return {
+      score,
+      postedAt: scoreResponse?.scores?.[0]?.posted_at instanceof Date
+        ? scoreResponse.scores[0].posted_at.toISOString()
+        : scoreResponse?.scores?.[0]?.posted_at ?? null,
+    };
 }

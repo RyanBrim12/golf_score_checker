@@ -20,6 +20,7 @@ export type GolferScore = {
   matchedLastName?: string;
   ghinNumber?: number;
   score?: number | null;
+  postedAt?: string | null;
   status: 'matched' | 'unmatched' | 'no-score' | 'error';
   message?: string;
 };
@@ -28,5 +29,6 @@ export type GhinScoreResponse = {
   scores?: Array<{
     adjusted_gross_score?: number | null;
     course_id?: string | null;
+    posted_at?: string | Date | null;
   }>;
 };

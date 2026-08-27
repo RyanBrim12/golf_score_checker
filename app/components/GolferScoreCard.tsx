@@ -7,6 +7,15 @@ interface GolferScoreCardProps {
 }
 
 export default function GolferScoreCard({ golfer, isUpdating = false, onMatchClick }: GolferScoreCardProps) {
+  const postedAt = golfer.postedAt ? new Date(golfer.postedAt) : null;
+  const postedAtText = postedAt && !Number.isNaN(postedAt.getTime())
+    ? postedAt.toLocaleString(undefined, {
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+    : null;
   const statusClass = isUpdating
     ? 'border-blue-400 bg-blue-50/40 animate-pulse'
     : golfer.status === 'matched'
@@ -49,12 +58,12 @@ export default function GolferScoreCard({ golfer, isUpdating = false, onMatchCli
             </div>
           ) : statusText ? (
             <p className={`text-xs font-medium shrink-0 ${statusTextClass}`}>{statusText}</p>
-          ) : <p><span className="font-semibold">Score:</span> {golfer.score}</p>}
+          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {golfer.score}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted {postedAtText}</p> : null}</div>}
         </div>
       </button>
 
       {/* ---------- DESKTOP LAYOUT (>= md) ---------- */}
-      <div className="hidden md:grid md:items-center md:gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_auto]">
+      <div className="hidden md:grid md:items-center md:gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(88px,0.7fr)_minmax(130px,1fr)_minmax(150px,1.1fr)]">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-900">{golfer.clubCaddieName}</p>
         </div>
@@ -77,6 +86,9 @@ export default function GolferScoreCard({ golfer, isUpdating = false, onMatchCli
           ) : (
             <p className="text-sm text-slate-400">—</p>
           )}
+        </div>
+        <div className="min-w-0">
+          {postedAtText ? <p className="text-xs text-slate-600">Posted: {postedAtText}</p> : <p className="text-sm text-slate-400">—</p>}
         </div>
         <div className="flex min-h-5 items-center justify-end text-right">
           {isUpdating ? (
