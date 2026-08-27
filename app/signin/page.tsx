@@ -7,6 +7,7 @@ export default function SignInPage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -49,7 +50,21 @@ export default function SignInPage() {
             </label>
             <label className="block text-sm font-medium text-slate-700">
               Password
-              <input required type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" autoComplete="current-password" />
+              <span className="relative mt-1 block">
+                <input required type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 pr-16" autoComplete="current-password" />
+                <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute inset-y-0 right-0 px-3 text-blue-600 hover:text-blue-800" aria-label={showPassword ? 'Hide password' : 'Show password'} title={showPassword ? 'Hide password' : 'Show password'}>
+                  {showPassword ? (
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M10.58 10.58a2 2 0 002.83 2.83M9.88 5.09A10.94 10.94 0 0112 4.5c5 0 8.27 4.11 9.5 7.5a16.7 16.7 0 01-3.06 4.89M6.61 6.61C4.82 7.84 3.56 9.72 2.5 12c1.23 3.39 4.5 7.5 9.5 7.5a10.9 10.9 0 004.11-.8" />
+                    </svg>
+                  ) : (
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 12S5.77 4.5 12 4.5 21.5 12 21.5 12 18.23 19.5 12 19.5 2.5 12 2.5 12z" />
+                      <circle cx="12" cy="12" r="2.5" />
+                    </svg>
+                  )}
+                </button>
+              </span>
             </label>
           </div>
           {error ? <p className="mt-4 text-sm text-rose-700" role="alert">{error}</p> : null}
