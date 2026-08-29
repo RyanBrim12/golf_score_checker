@@ -21,6 +21,7 @@ export type GolferScore = {
   ghinNumber?: number;
   score?: number | null;
   postedAt?: string | null;
+  scoreType?: string | null;
   status: 'matched' | 'unmatched' | 'no-score' | 'error';
   message?: string;
 };
@@ -30,5 +31,7 @@ export type GhinScoreResponse = {
     adjusted_gross_score?: number | null;
     course_id?: string | null;
     posted_at?: string | Date | null;
+    score_type?: string | null;
+    score_type_display_full?: string | null;
   }>;
 };

@@ -184,6 +184,7 @@ export default function Dashboard({ userRole = null }: DashboardProps) {
                       status: refreshedScore ? 'matched' : 'no-score',
                       score: refreshedScore ?? undefined,
                       postedAt: body.postedAt ?? null,
+                      scoreType: body.scoreType ?? null,
                     }
                   : golfer
               )

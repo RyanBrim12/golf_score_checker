@@ -80,7 +80,7 @@ async function searchGolfers(ghin: ReturnType<typeof createGhinClient>, name: st
   return null;
 }
 
-function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, score?: number | null, message?: string, postedAt?: string | Date | null): GolferScore {
+function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, score?: number | null, message?: string, postedAt?: string | Date | null, scoreType?: string | null): GolferScore {  
   if (!bestMatch) {
     return {
       clubCaddieName: golfer.clubCaddieName,
@@ -113,6 +113,7 @@ function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, sco
     ghinNumber: bestMatch.ghin,
     score,
     postedAt: postedAt instanceof Date ? postedAt.toISOString() : postedAt,
+    scoreType: scoreType ?? null,
     status: 'matched',
   };
 }
@@ -149,7 +150,8 @@ export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[
 
     const score = scoreResponse?.scores?.[0]?.adjusted_gross_score ?? null;
     const postedAt = scoreResponse?.scores?.[0]?.posted_at ?? null;
-    results.push(formatScoreResult(golfer, matchedGolfer, score, undefined, postedAt));
+    const scoreType = scoreResponse?.scores?.[0]?.score_type_display_full ?? scoreResponse?.scores?.[0]?.score_type ?? null;
+    results.push(formatScoreResult(golfer, matchedGolfer, score, undefined, postedAt, scoreType));
   }
 
   return results;
@@ -191,7 +193,7 @@ export function parseGhinScoreError(error: unknown): GhinScoreResponse | undefin
   return undefined;
 }
 
-export async function fetchScoreByGhin(ghin: number, date: string, username: string, password: string, courseId?: string): Promise<{ score: number; postedAt: string | null } | null> {
+export async function fetchScoreByGhin(ghin: number, date: string, username: string, password: string, courseId?: string): Promise<{ score: number; postedAt: string | null, scoreType: string | null } | null> {
   const ghinClient = createGhinClient(username, password);
   const scoreResponse = await ghinClient.golfers.getScores(ghin, {
       from_date_played: new Date(date),
@@ -211,5 +213,6 @@ export async function fetchScoreByGhin(ghin: number, date: string, username: str
       postedAt: scoreResponse?.scores?.[0]?.posted_at instanceof Date
         ? scoreResponse.scores[0].posted_at.toISOString()
         : scoreResponse?.scores?.[0]?.posted_at ?? null,
+      scoreType: scoreResponse?.scores?.[0]?.score_type_display_full ?? null,
     };
 }

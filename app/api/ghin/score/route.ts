@@ -53,7 +53,8 @@ export async function GET(request: Request) {
     }
 
     const postedAt = scoreEntry.posted_at instanceof Date ? scoreEntry.posted_at.toISOString() : scoreEntry.posted_at ?? null;
-    return NextResponse.json({ score: scoreEntry.adjusted_gross_score, postedAt, status: 'matched' });
+    const scoreType = scoreEntry.score_type_display_full ?? null;
+    return NextResponse.json({ score: scoreEntry.adjusted_gross_score, postedAt, scoreType, status: 'matched' });
   } catch (error: unknown) {
     return internalServerError(requestId, error);
   }

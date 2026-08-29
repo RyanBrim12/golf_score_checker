@@ -39,7 +39,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const ghinPassword = process.env.GHIN_PASSWORD!;
     const ghinCourseId = process.env.GHIN_COURSE_ID!;
     const scoreResult = await fetchScoreByGhin(ghin, date, ghinUsername, ghinPassword, ghinCourseId);
-    return NextResponse.json({ score: scoreResult?.score ?? null, postedAt: scoreResult?.postedAt ?? null });
+    return NextResponse.json({ score: scoreResult?.score ?? null, postedAt: scoreResult?.postedAt ?? null, scoreType: scoreResult?.scoreType ?? null });
   } catch (error: unknown) {
     return internalServerError(requestId, error);
   }
