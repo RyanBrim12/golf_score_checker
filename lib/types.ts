@@ -20,6 +20,7 @@ export type GolferScore = {
   matchedLastName?: string;
   ghinNumber?: number;
   score?: number | null;
+  used?: boolean | null;
   postedAt?: string | null;
   scoreType?: string | null;
   status: 'matched' | 'unmatched' | 'no-score' | 'error';
@@ -33,5 +34,6 @@ export type GhinScoreResponse = {
     posted_at?: string | Date | null;
     score_type?: string | null;
     score_type_display_full?: string | null;
+    used?: boolean | 'true' | 'false' | null;
   }>;
 };

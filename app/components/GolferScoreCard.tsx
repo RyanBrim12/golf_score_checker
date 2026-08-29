@@ -19,6 +19,7 @@ export default function GolferScoreCard({ golfer, date, isUpdating = false, onMa
       })
     : null;
   const scoreType = golfer.scoreType ? golfer.scoreType : null;
+  const formattedScore = golfer.score !== undefined && golfer.score !== null ? `${golfer.used ? '*' : ''}${golfer.score}${scoreType ?? ''}` : null;
   const statusClass = isUpdating
     ? 'border-blue-400 bg-blue-50/40 animate-pulse'
     : golfer.status === 'matched'
@@ -61,7 +62,7 @@ export default function GolferScoreCard({ golfer, date, isUpdating = false, onMa
             </div>
           ) : statusText ? (
             <p className={`text-xs font-medium shrink-0 ${statusTextClass}`}>{statusText}</p>
-          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {golfer.score}{scoreType ?? ''}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}</div>}
+          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {formattedScore}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}</div>}
         </div>
       </button>
 
@@ -95,7 +96,7 @@ export default function GolferScoreCard({ golfer, date, isUpdating = false, onMa
             <span className="text-xs text-slate-400">Fetching score...</span>
           ) : statusText ? (
             <p className={`text-sm font-medium ${statusTextClass}`}>{statusText}</p>
-          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {golfer.score}{scoreType ?? ''}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}</div>}
+          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {formattedScore}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}</div>}
         </div>
       </div>
     </div>

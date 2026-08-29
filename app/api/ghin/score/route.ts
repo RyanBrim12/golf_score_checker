@@ -54,7 +54,8 @@ export async function GET(request: Request) {
 
     const postedAt = scoreEntry.posted_at instanceof Date ? scoreEntry.posted_at.toISOString() : scoreEntry.posted_at ?? null;
     const scoreType = scoreEntry.score_type_display_full ?? null;
-    return NextResponse.json({ score: scoreEntry.adjusted_gross_score, postedAt, scoreType, status: 'matched' });
+    const used = scoreEntry.used === true || scoreEntry.used === 'true' ? true : scoreEntry.used === false || scoreEntry.used === 'false' ? false : null;
+    return NextResponse.json({ score: scoreEntry.adjusted_gross_score, postedAt, scoreType, used, status: 'matched' });
   } catch (error: unknown) {
     return internalServerError(requestId, error);
   }

@@ -7,6 +7,12 @@ function createGhinClient(username: string, password: string) {
   return new GhinClient({ username, password });
 }
 
+function normalizeUsedFlag(value: boolean | 'true' | 'false' | null | undefined): boolean | null {
+  if (value === true || value === 'true') return true;
+  if (value === false || value === 'false') return false;
+  return null;
+}
+
 function findBestMatch(firstName: string, golfers: GhinGolfer[]): GhinGolfer | null {
   const fuse = new Fuse(golfers, { keys: ['first_name'], includeScore: true });
   const results = fuse.search(firstName);
@@ -80,7 +86,7 @@ async function searchGolfers(ghin: ReturnType<typeof createGhinClient>, name: st
   return null;
 }
 
-function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, score?: number | null, message?: string, postedAt?: string | Date | null, scoreType?: string | null): GolferScore {  
+function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, score?: number | null, message?: string, postedAt?: string | Date | null, scoreType?: string | null, used?: boolean | null): GolferScore {  
   if (!bestMatch) {
     return {
       clubCaddieName: golfer.clubCaddieName,
@@ -99,6 +105,7 @@ function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, sco
       matchedFirstName: bestMatch.first_name,
       matchedLastName: bestMatch.last_name,
       ghinNumber: bestMatch.ghin,
+      used: used ?? null,
       status: 'no-score',
       message: message ?? 'No score found for selected date.',
     };
@@ -112,6 +119,7 @@ function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, sco
     matchedLastName: bestMatch.last_name,
     ghinNumber: bestMatch.ghin,
     score,
+    used: used ?? null,
     postedAt: postedAt instanceof Date ? postedAt.toISOString() : postedAt,
     scoreType: scoreType ?? null,
     status: 'matched',
@@ -151,7 +159,8 @@ export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[
     const score = scoreResponse?.scores?.[0]?.adjusted_gross_score ?? null;
     const postedAt = scoreResponse?.scores?.[0]?.posted_at ?? null;
     const scoreType = scoreResponse?.scores?.[0]?.score_type_display_full ?? scoreResponse?.scores?.[0]?.score_type ?? null;
-    results.push(formatScoreResult(golfer, matchedGolfer, score, undefined, postedAt, scoreType));
+    const used = normalizeUsedFlag(scoreResponse?.scores?.[0]?.used);
+    results.push(formatScoreResult(golfer, matchedGolfer, score, undefined, postedAt, scoreType, used));
   }
 
   return results;
@@ -193,7 +202,7 @@ export function parseGhinScoreError(error: unknown): GhinScoreResponse | undefin
   return undefined;
 }
 
-export async function fetchScoreByGhin(ghin: number, date: string, username: string, password: string, courseId?: string): Promise<{ score: number; postedAt: string | null, scoreType: string | null } | null> {
+export async function fetchScoreByGhin(ghin: number, date: string, username: string, password: string, courseId?: string): Promise<{ score: number; postedAt: string | null, scoreType: string | null, used: boolean | null } | null> {
   const ghinClient = createGhinClient(username, password);
   const scoreResponse = await ghinClient.golfers.getScores(ghin, {
       from_date_played: new Date(date),
@@ -214,5 +223,6 @@ export async function fetchScoreByGhin(ghin: number, date: string, username: str
         ? scoreResponse.scores[0].posted_at.toISOString()
         : scoreResponse?.scores?.[0]?.posted_at ?? null,
       scoreType: scoreResponse?.scores?.[0]?.score_type_display_full ?? null,
+      used: normalizeUsedFlag(scoreResponse?.scores?.[0]?.used),
     };
 }

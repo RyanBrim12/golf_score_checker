@@ -183,6 +183,7 @@ export default function Dashboard({ userRole = null }: DashboardProps) {
                       ghinNumber: Number.isNaN(parsedGhin) ? undefined : parsedGhin,
                       status: refreshedScore ? 'matched' : 'no-score',
                       score: refreshedScore ?? undefined,
+                      used: body.used ?? null,
                       postedAt: body.postedAt ?? null,
                       scoreType: body.scoreType ?? null,
                     }
