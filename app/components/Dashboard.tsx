@@ -284,6 +284,7 @@ export default function Dashboard({ userRole = null }: DashboardProps) {
                 <GolferScoreCard
                   key={golfer.clubCaddieName}
                   golfer={golfer}
+                  date={date}
                   isUpdating={golfer.clubCaddieName === updatingGolferName}
                   onMatchClick={handleOpenMatchModal}
                 />

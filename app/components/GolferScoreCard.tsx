@@ -2,12 +2,14 @@ import type { GolferScore } from '@/lib/types';
 
 interface GolferScoreCardProps {
   golfer: GolferScore;
+  date: string;
   isUpdating?: boolean;
   onMatchClick?: (golfer: GolferScore) => void;
 }
 
-export default function GolferScoreCard({ golfer, isUpdating = false, onMatchClick }: GolferScoreCardProps) {
+export default function GolferScoreCard({ golfer, date, isUpdating = false, onMatchClick }: GolferScoreCardProps) {
   const postedAt = golfer.postedAt ? new Date(golfer.postedAt) : null;
+  const wasPostedLate = postedAt && postedAt > new Date(`${date}T23:59:59`);
   const postedAtText = postedAt && !Number.isNaN(postedAt.getTime())
     ? postedAt.toLocaleString(undefined, {
         month: 'numeric',
@@ -58,12 +60,12 @@ export default function GolferScoreCard({ golfer, isUpdating = false, onMatchCli
             </div>
           ) : statusText ? (
             <p className={`text-xs font-medium shrink-0 ${statusTextClass}`}>{statusText}</p>
-          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {golfer.score}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted {postedAtText}</p> : null}</div>}
+          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {golfer.score}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}</div>}
         </div>
       </button>
 
       {/* ---------- DESKTOP LAYOUT (>= md) ---------- */}
-      <div className="hidden md:grid md:items-center md:gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(88px,0.7fr)_minmax(130px,1fr)_minmax(150px,1.1fr)]">
+      <div className="hidden md:grid md:items-center md:gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_auto]">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-900">{golfer.clubCaddieName}</p>
         </div>
@@ -87,15 +89,12 @@ export default function GolferScoreCard({ golfer, isUpdating = false, onMatchCli
             <p className="text-sm text-slate-400">—</p>
           )}
         </div>
-        <div className="min-w-0">
-          {postedAtText ? <p className="text-xs text-slate-600">Posted: {postedAtText}</p> : <p className="text-sm text-slate-400">—</p>}
-        </div>
         <div className="flex min-h-5 items-center justify-end text-right">
           {isUpdating ? (
             <span className="text-xs text-slate-400">Fetching score...</span>
           ) : statusText ? (
             <p className={`text-sm font-medium ${statusTextClass}`}>{statusText}</p>
-          ) : <p><span className="font-semibold">Score:</span> {golfer.score}</p>}
+          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {golfer.score}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}</div>}
         </div>
       </div>
     </div>
