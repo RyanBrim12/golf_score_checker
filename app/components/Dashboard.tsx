@@ -350,52 +350,54 @@ export default function Dashboard({ userRole = null }: DashboardProps) {
                 <p className="mt-1 text-lg font-semibold text-slate-900">{viewerMatchDetail.clubCaddieName}</p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <section className="space-y-3 border-t border-slate-200 pt-4">
+                <h3 className="text-sm font-semibold text-slate-900">GHIN</h3>
 
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Matched player</p>
-                  <p className="mt-1 text-sm text-slate-800">
-                    {viewerMatchDetail.matchedFirstName && viewerMatchDetail.matchedLastName
-                      ? `${viewerMatchDetail.matchedFirstName} ${viewerMatchDetail.matchedLastName}`
-                      : 'No match assigned'}
-                  </p>
-                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
 
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">GHIN</p>
-                  <p className="mt-1 text-sm text-slate-800">
-                    {viewerMatchDetail.ghinNumber ?? '—'}
-                  </p>
-                </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Matched player</p>
+                    <p className="mt-1 text-sm text-slate-800">
+                      {viewerMatchDetail.matchedFirstName && viewerMatchDetail.matchedLastName
+                        ? `${viewerMatchDetail.matchedFirstName} ${viewerMatchDetail.matchedLastName}`
+                        : 'No match assigned'}
+                    </p>
+                  </div>
 
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">State</p>
-                  <p className="mt-1 text-sm text-slate-800">{state || '—'}</p>
-                </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">GHIN</p>
+                    <p className="mt-1 text-sm text-slate-800">
+                      {viewerMatchDetail.ghinNumber ?? '—'}
+                    </p>
+                  </div>
 
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Club</p>
-                  <p className="mt-1 text-sm text-slate-800">{club || '—'}</p>
-                </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">State</p>
+                    <p className="mt-1 text-sm text-slate-800">{state || '—'}</p>
+                  </div>
 
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Status</p>
-                  <p className="mt-1 text-sm text-slate-800">
-                    {viewerMatchDetail.status === 'matched'
-                      ? 'Matched'
-                      : viewerMatchDetail.status === 'unmatched'
-                        ? 'Unmatched'
-                        : viewerMatchDetail.status === 'no-score'
-                          ? 'No score available'
-                          : 'Needs attention'}
-                  </p>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Club</p>
+                    <p className="mt-1 text-sm text-slate-800">{club || '—'}</p>
+                  </div>
                 </div>
+              </section>
 
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Score</p>
-                  <p className="mt-1 text-sm text-slate-800">{viewerMatchDetail.score ?? '—'}</p>
+              <section className="space-y-3 border-t border-slate-200 pt-4">
+                <h3 className="text-sm font-semibold text-slate-900">Sweeps</h3>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Matched player</p>
+                    <p className="mt-1 text-sm text-slate-800">{viewerMatchDetail.sweepsPlayerName || 'No match assigned'}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Player ID</p>
+                    <p className="mt-1 text-sm text-slate-800">{viewerMatchDetail.sweepsPlayerId ?? '—'}</p>
+                  </div>
                 </div>
-              </div>
+              </section>
             </div>
 
             <div className="flex justify-end border-t px-4 py-3 sm:px-6 sm:py-4">
