@@ -5,6 +5,7 @@ import GolferScoreCard from './GolferScoreCard';
 import { ManualMatchModal, type ManualMatchData } from './ManualMatchModal';
 import ScoreboardSkeleton from './ScoreboardSkeleton';
 import type { GolferScore } from '@/lib/types';
+import type { SweepsPlayerOption } from '@/lib/types';
 
 const today = new Date();
 const yesterdayDate = new Date(today);
@@ -29,6 +30,7 @@ export default function Dashboard({ userRole = null }: DashboardProps) {
   const [matchModalInitialValues, setMatchModalInitialValues] = useState<ManualMatchData | null>(null);
   const [viewerMatchDetail, setViewerMatchDetail] = useState<GolferScore | null>(null);
   const [updatingGolferName, setUpdatingGolferName] = useState<string | null>(null);
+  const [sweepsGolfers, setSweepsGolfers] = useState<SweepsPlayerOption[]>([]);
 
   const handleFetch = async () => {
     setLoading(true);
@@ -46,10 +48,45 @@ export default function Dashboard({ userRole = null }: DashboardProps) {
       setScores(result?.scores);
       setState(result?.state);
       setClub(result?.club);
+      setSweepsGolfers(result?.sweepsGolfers ?? []);
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : 'Unknown error occurred.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSweepsMatchSubmit = async (sweepsId: number | null) => {
+    if (!activeGolfer) return;
+    const targetName = activeGolfer.clubCaddieName;
+    setUpdatingGolferName(targetName);
+
+    try {
+      const body = JSON.stringify({ name: targetName, sweepsId, date });
+      let response = await fetch('/api/sweeps', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
+      if (!response.ok) {
+        response = await fetch('/api/sweeps', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+      }
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result?.message || 'Failed to save sweeps match.');
+      }
+      const result = await response.json();
+      const selectedSweepsPlayer = sweepsGolfers.find((player) => player.playerId === sweepsId);
+      setScores((currentScores) => currentScores
+        ? currentScores.map((golfer) => golfer.clubCaddieName === targetName
+          ? {
+              ...golfer,
+              sweepsPlayerId: result.match?.sweepsPlayerId ?? (sweepsId === null ? null : golfer.sweepsPlayerId),
+              sweepsPlayerName: result.match?.sweepsPlayerName ?? (sweepsId === null ? null : selectedSweepsPlayer?.playerName ?? golfer.sweepsPlayerName),
+              sweepsGrossTotal: result.match?.sweepsGrossTotal ?? undefined,
+            }
+          : golfer)
+        : currentScores);
+    } catch (matchError) {
+      setError(matchError instanceof Error ? matchError.message : 'Unknown error occurred while saving sweeps match.');
+    } finally {
+      setUpdatingGolferName(null);
     }
   };
 
@@ -378,6 +415,10 @@ export default function Dashboard({ userRole = null }: DashboardProps) {
           onOpenChange={handleMatchModalOpenChange}
           onSubmit={handleMatchSubmit}
           initialValues={matchModalInitialValues}
+          clubCaddieName={activeGolfer?.clubCaddieName}
+          sweepsGolfers={sweepsGolfers}
+          initialSweepsId={activeGolfer?.sweepsPlayerId}
+          onSweepsSubmit={isViewer ? undefined : handleSweepsMatchSubmit}
         />
       )}
     </div>

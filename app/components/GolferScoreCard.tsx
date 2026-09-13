@@ -20,6 +20,7 @@ export default function GolferScoreCard({ golfer, date, isUpdating = false, onMa
     : null;
   const scoreType = golfer.scoreType ? golfer.scoreType : null;
   const formattedScore = golfer.score !== undefined && golfer.score !== null ? `${golfer.used ? '*' : ''}${golfer.score}${scoreType ?? ''}` : null;
+  const sweepsGrossText = golfer.sweepsGrossTotal !== undefined && golfer.sweepsGrossTotal !== null ? `Sweeps: ${golfer.sweepsGrossTotal}` : null;
   const statusClass = isUpdating
     ? 'border-blue-400 bg-blue-50/40 animate-pulse'
     : golfer.status === 'matched'
@@ -61,13 +62,15 @@ export default function GolferScoreCard({ golfer, date, isUpdating = false, onMa
               </svg>
             </div>
           ) : statusText ? (
-            <p className={`text-xs font-medium shrink-0 ${statusTextClass}`}>{statusText}</p>
-          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {formattedScore}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}</div>}
+            <div className="text-right">
+              <p className={`text-xs font-medium shrink-0 ${statusTextClass}`}>{statusText}</p>
+              {sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}
+            </div>
+          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {formattedScore}</p>{sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}</div>}
         </div>
       </button>
-
       {/* ---------- DESKTOP LAYOUT (>= md) ---------- */}
-      <div className="hidden md:grid md:items-center md:gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_auto]">
+      <div className="hidden md:grid md:items-center md:gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_auto_minmax(0,0.8fr)]">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-900">{golfer.clubCaddieName}</p>
         </div>
@@ -76,7 +79,7 @@ export default function GolferScoreCard({ golfer, date, isUpdating = false, onMa
             type="button"
             disabled={isUpdating}
             onClick={() => onMatchClick?.(golfer)}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-w-0 w-full truncate rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <span className="font-semibold">Match:</span>{' '}
             {golfer.matchedFirstName ? `${golfer.matchedFirstName} ${golfer.matchedLastName}` : 'No match'}
@@ -95,8 +98,11 @@ export default function GolferScoreCard({ golfer, date, isUpdating = false, onMa
           {isUpdating ? (
             <span className="text-xs text-slate-400">Fetching score...</span>
           ) : statusText ? (
-            <p className={`text-sm font-medium ${statusTextClass}`}>{statusText}</p>
-          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {formattedScore}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}</div>}
+            <div className="text-right">
+              <p className={`text-sm font-medium ${statusTextClass}`}>{statusText}</p>
+              {sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}
+            </div>
+          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {formattedScore}</p>{sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}</div>}
         </div>
       </div>
     </div>

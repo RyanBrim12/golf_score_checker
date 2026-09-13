@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { GhinGolfer } from '@/lib/types';
+import type { GhinGolfer, SweepsPlayerOption } from '@/lib/types';
 
 interface ManualMatchModalProps {
   open: boolean;
@@ -9,6 +9,10 @@ interface ManualMatchModalProps {
   onSubmit: (data: ManualMatchData | null) => void;
   isLoading?: boolean;
   initialValues?: ManualMatchData | null;
+  clubCaddieName?: string;
+  sweepsGolfers?: SweepsPlayerOption[];
+  initialSweepsId?: number | null;
+  onSweepsSubmit?: (sweepsId: number | null) => void;
 }
 
 export interface ManualMatchData {
@@ -29,7 +33,12 @@ export function ManualMatchModal({
   onSubmit,
   isLoading = false,
   initialValues = null,
+  clubCaddieName = '',
+  sweepsGolfers = [],
+  initialSweepsId = null,
+  onSweepsSubmit,
 }: ManualMatchModalProps) {
+  const [mode, setMode] = useState<'ghin' | 'sweeps'>('ghin');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [ghinNumber, setGhinNumber] = useState('');
@@ -42,6 +51,8 @@ export function ManualMatchModal({
   const [remotePage, setRemotePage] = useState(1);
   const [hasMoreRemotePages, setHasMoreRemotePages] = useState(false);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [sweepsSearch, setSweepsSearch] = useState('');
+  const [sweepsPage, setSweepsPage] = useState(0);
 
   // Holds the AbortController for the most recent search. Aborted when a new
   // search fires so stale responses never pollute the current result set.
@@ -251,6 +262,10 @@ export function ManualMatchModal({
       setRemotePage(1);
       setHasMoreRemotePages(false);
       setIsFetchingMore(false);
+      setMode('ghin');
+      const initialSweepsGolfer = sweepsGolfers.find((golfer) => golfer.playerId === initialSweepsId);
+      setSweepsSearch(initialSweepsGolfer?.playerName ?? clubCaddieName);
+      setSweepsPage(0);
     } else {
       setFirstName('');
       setLastName('');
@@ -263,8 +278,9 @@ export function ManualMatchModal({
       setRemotePage(1);
       setHasMoreRemotePages(false);
       setIsFetchingMore(false);
+      setSweepsPage(0);
     }
-  }, [open, initialValues?.firstName, initialValues?.lastName, initialValues?.ghinNumber, initialValues?.state, initialValues?.club]);
+  }, [open, initialValues?.firstName, initialValues?.lastName, initialValues?.ghinNumber, initialValues?.state, initialValues?.club, clubCaddieName, initialSweepsId, sweepsGolfers]);
 
   useEffect(() => {
     if (!open) return;
@@ -304,15 +320,66 @@ export function ManualMatchModal({
   const nextDisabled    = (isLastLocalPage && !hasMoreRemotePages) || isFetchingMore;
   const jumpFwdDisabled = (isLastLocalPage && !hasMoreRemotePages) || isFetchingMore;
   const jumpBkDisabled  = currentPage === 0 || isFetchingMore;
+  const filteredSweepsGolfers = sweepsGolfers.filter((golfer) => golfer.playerName.toLowerCase().includes(sweepsSearch.trim().toLowerCase()));
+  const sweepsPageSize = 5;
+  const sweepsTotalPages = Math.ceil(filteredSweepsGolfers.length / sweepsPageSize);
+  const visibleSweepsGolfers = filteredSweepsGolfers.slice(sweepsPage * sweepsPageSize, (sweepsPage + 1) * sweepsPageSize);
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-end sm:items-center justify-center">
       <div className="bg-white rounded-t-lg sm:rounded-lg shadow-lg w-full sm:max-w-[500px] sm:mx-4 h-[92vh] sm:h-auto sm:max-h-[85vh] flex flex-col">
         <div className="border-b px-4 py-3 sm:px-6 sm:py-4 shrink-0">
-          <h2 className="text-base sm:text-lg font-semibold">Match GHIN Account</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base sm:text-lg font-semibold">{mode === 'ghin' ? 'Match GHIN Account' : 'Match Sweeps Account'}</h2>
+            {onSweepsSubmit ? (
+              <button
+                type="button"
+                onClick={() => setMode(mode === 'ghin' ? 'sweeps' : 'ghin')}
+                className="shrink-0 rounded border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+              >
+                {mode === 'ghin' ? '→ Sweeps' : 'GHIN ←'}
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <div className="p-4 sm:p-6 space-y-3 sm:space-y-4 overflow-y-auto flex-1">
+          {mode === 'sweeps' ? (
+            <>
+              <label htmlFor="sweepsSearch" className="block text-sm font-medium text-slate-700">Search sweeps golfers</label>
+              <input
+                id="sweepsSearch"
+                type="search"
+                placeholder="John Smith"
+                value={sweepsSearch}
+                onChange={(event) => { setSweepsSearch(event.target.value); setSweepsPage(0); }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <ul className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-2 text-sm text-slate-600">
+                <li>
+                  <button type="button" onClick={() => { onSweepsSubmit?.(null); handleOpenChange(false); }} className="w-full rounded border border-slate-200 bg-white px-3 py-2.5 text-left hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700">
+                    No Match
+                  </button>
+                </li>
+                {visibleSweepsGolfers.map((golfer) => (
+                  <li key={golfer.playerId}>
+                    <button type="button" onClick={() => { onSweepsSubmit?.(golfer.playerId); handleOpenChange(false); }} className="w-full rounded border border-slate-200 bg-white px-3 py-2.5 text-left hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700">
+                      {golfer.playerName}{golfer.handicap !== null ? ` (Handicap: ${golfer.handicap})` : ''}
+                    </button>
+                  </li>
+                ))}
+                {filteredSweepsGolfers.length === 0 ? <li className="px-2 py-2 text-slate-500">No sweeps golfers found.</li> : null}
+              </ul>
+              {sweepsTotalPages > 1 ? (
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <button type="button" disabled={sweepsPage === 0} onClick={() => setSweepsPage((page) => page - 1)} className={btnClass}>Prev</button>
+                  <span className="text-xs text-slate-500">{sweepsPage + 1}/{sweepsTotalPages}</span>
+                  <button type="button" disabled={sweepsPage >= sweepsTotalPages - 1} onClick={() => setSweepsPage((page) => page + 1)} className={btnClass}>Next</button>
+                </div>
+              ) : null}
+            </>
+          ) : (
+          <>
           {/* Name row — stacks on mobile, side-by-side from sm up */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-5">
             <div className="flex-1">
@@ -493,6 +560,8 @@ export function ManualMatchModal({
               </div>
             )}
           </div>
+          </>
+          )}
         </div>
 
         {/* Footer pinned to bottom, full-width Cancel on mobile */}

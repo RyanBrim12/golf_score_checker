@@ -23,6 +23,9 @@ export type GolferScore = {
   used?: boolean | null;
   postedAt?: string | null;
   scoreType?: string | null;
+  sweepsGrossTotal?: number | null;
+  sweepsPlayerId?: number | null;
+  sweepsPlayerName?: string | null;
   status: 'matched' | 'unmatched' | 'no-score' | 'error';
   message?: string;
 };
@@ -37,3 +40,16 @@ export type GhinScoreResponse = {
     used?: boolean | 'true' | 'false' | null;
   }>;
 };
+
+export type SweepsPlayer = {
+  membershipId: string | number | null;
+  playerId: number;
+  playerName: string;
+  handicap: number | null;
+  handicapCalculated: number | null;
+  handicapStatus: string | null;
+  role: string | null;
+  isActive: boolean | null;
+};
+
+export type SweepsPlayerOption = Pick<SweepsPlayer, 'playerId' | 'playerName' | 'handicap'>;

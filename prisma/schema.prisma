@@ -12,3 +12,8 @@ model GhinNameMatch {
   name String @id
   ghin Int?
 }
+
+model SweepsNameMatch {
+  name     String @id
+  sweepsId Int?
+}

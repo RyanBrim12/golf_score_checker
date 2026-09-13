@@ -4,6 +4,8 @@ import { fetchGolferScores } from '@/lib/ghin';
 import { authenticate } from '@/lib/auth';
 import { createRequestId, internalServerError } from '@/lib/request';
 import { isValidScoreDate } from '@/lib/validation';
+import { applySweepsScores, fetchAllSweepsPlayers, fetchGameByDate, fetchRoundsByGameId } from '@/lib/sweeps';
+import { getAllSweepsMatches } from '@/lib/database';
 
 const REQUIRED_ENV = [
   'CLUB_CADDIE_CLUB_ID',
@@ -15,7 +17,8 @@ const REQUIRED_ENV = [
   'GHIN_STATE',
   'GHIN_COUNTRY',
   'GHIN_CLUB_ID',
-  'GHIN_COURSE_ID'
+  'GHIN_COURSE_ID',
+  'SWEEPS_API_KEY'
 ];
 
 function validateEnv() {
@@ -55,7 +58,19 @@ export async function GET(request: Request) {
     const html = await fetchTeeSheetHtml(session, sheetId, date);
     const golfers = parseGolfersFromTeeSheet(html);
     const scores = await fetchGolferScores(date, golfers, ghinUsername, ghinPassword, ghinState, ghinClubId, ghinCountry, ghinCourseId, requestId);
-    return NextResponse.json({scores, state: ghinState, club: ghinClub});
+    const game = await fetchGameByDate(date);
+    const rounds = game?.id ? await fetchRoundsByGameId(String(game.id)) : [];
+    const sweepsPlayers = await fetchAllSweepsPlayers();
+    const sweepsMatches = await getAllSweepsMatches();
+    const scoresWithSweeps = await applySweepsScores(scores, rounds, new Map(sweepsMatches.map((match) => [match.name, match.sweepsId])));
+    return NextResponse.json({
+      scores: scoresWithSweeps,
+      state: ghinState,
+      club: ghinClub,
+      sweepsGolfers: sweepsPlayers
+        .sort((a, b) => a.playerName.localeCompare(b.playerName))
+        .map((player) => ({ playerId: player.playerId, playerName: player.playerName, handicap: player.handicap ?? player.handicapCalculated })),
+    });
   } catch (error: unknown) {
     return internalServerError(requestId, error);
   }

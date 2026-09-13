@@ -36,7 +36,7 @@ export default function ScoreboardSkeleton() {
               </div>
             </div>
 
-            <div className="hidden md:grid md:items-center md:gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_auto]">
+            <div className="hidden md:grid md:items-center md:gap-3 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
               <div className="min-w-0">
                 <div className="h-4 w-36 rounded-md bg-slate-200 animate-pulse" />
               </div>

@@ -6,6 +6,11 @@ export interface Match {
   name: string;
 }
 
+export interface SweepsMatch {
+  name: string;
+  sweepsId: number | null;
+}
+
 export async function initDb(): Promise<void> {
   await prisma.$connect();
 }
@@ -70,6 +75,50 @@ export async function updateMatch(name: string, newGhin: number): Promise<boolea
 export async function deleteMatch(name: string): Promise<boolean> {
   const record = await prisma.ghinNameMatch.deleteMany({ where: { name } });
   if (record.count > 0) revalidateTag('ghin-name-matches');
+  return record.count > 0;
+}
+
+export async function createSweepsMatch(match: SweepsMatch): Promise<boolean> {
+  try {
+    await prisma.sweepsNameMatch.create({ data: match });
+    revalidateTag('sweeps-name-matches');
+    return true;
+  } catch (error: unknown) {
+    return false;
+  }
+}
+
+export async function updateSweepsMatch(name: string, sweepsId: number | null): Promise<boolean> {
+  const existing = await prisma.sweepsNameMatch.findUnique({ where: { name } });
+  if (!existing) return false;
+
+  await prisma.sweepsNameMatch.update({ where: { name }, data: { sweepsId } });
+  revalidateTag('sweeps-name-matches');
+  return true;
+}
+
+export async function getAllSweepsMatches(): Promise<SweepsMatch[]> {
+  const records = await prisma.sweepsNameMatch.findMany({ orderBy: { name: 'asc' } });
+  return records.map((record) => ({ name: record.name, sweepsId: record.sweepsId }));
+}
+
+const getCachedSweepsMatchByName = unstable_cache(
+  async (name: string) => {
+    const record = await prisma.sweepsNameMatch.findUnique({ where: { name } });
+    return record ? { name: record.name, sweepsId: record.sweepsId } : null;
+  },
+  ['sweeps-name-match-by-name'],
+  {
+    revalidate: 60 * 60,
+    tags: ['sweeps-name-matches'],
+  }
+);
+
+export { getCachedSweepsMatchByName };
+
+export async function deleteSweepsMatch(name: string): Promise<boolean> {
+  const record = await prisma.sweepsNameMatch.deleteMany({ where: { name } });
+  if (record.count > 0) revalidateTag('sweeps-name-matches');
   return record.count > 0;
 }
 
