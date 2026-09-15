@@ -66,7 +66,7 @@ export default function GolferScoreCard({ golfer, date, isUpdating = false, onMa
               <p className={`text-xs font-medium shrink-0 ${statusTextClass}`}>{statusText}</p>
               {sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}
             </div>
-          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {formattedScore}</p>{sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}</div>}
+          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {formattedScore}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}{sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}</div>}
         </div>
       </button>
       {/* ---------- DESKTOP LAYOUT (>= md) ---------- */}
@@ -102,7 +102,7 @@ export default function GolferScoreCard({ golfer, date, isUpdating = false, onMa
               <p className={`text-sm font-medium ${statusTextClass}`}>{statusText}</p>
               {sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}
             </div>
-          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {formattedScore}</p>{sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}</div>}
+          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {formattedScore}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}{sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}</div>}
         </div>
       </div>
     </div>
