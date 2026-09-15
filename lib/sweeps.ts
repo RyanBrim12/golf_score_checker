@@ -171,7 +171,6 @@ export async function applySweepsScores(golfers: GolferScore[], rounds: SweepsRo
       const sameLastName = fuzzyRounds.filter((candidate) => candidate.nameParts.lastName === nameParts.lastName);
       const fuse = new Fuse(sameLastName, { keys: ['nameParts.firstName'], includeScore: true });
       const results = fuse.search(nameParts.firstName);
-      console.log(results);
       if (results.length === 0) continue;
       const bestMatch = results.reduce((best, current) => {
         const bestScore = best.score ?? Number.POSITIVE_INFINITY;
