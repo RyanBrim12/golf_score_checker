@@ -65,6 +65,18 @@ function normalizeName(name: string) {
     .join(' ');
 }
 
+function normalizeNamePart(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function getNameParts(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: normalizeNamePart(parts[0] ?? ''),
+    lastName: normalizeNamePart(parts[parts.length - 1] ?? ''),
+  };
+}
+
 function normalizeRound(round: Record<string, unknown>): SweepsRound {
   return {
     id: typeof round.id === 'number' ? round.id : null,
@@ -117,8 +129,10 @@ export async function applySweepsScores(golfers: GolferScore[], rounds: SweepsRo
   const scoresByName = new Map<string, number | null>();
   const fuzzyRounds = rounds
     .filter((round) => round.playerName)
-    .map((round) => ({ round, normalizedName: normalizeName(round.playerName as string) }));
-  const fuse = new Fuse(fuzzyRounds, { keys: ['normalizedName'], includeScore: true });
+    .map((round) => ({
+      round,
+      nameParts: getNameParts(round.playerName as string),
+    }));
 
   for (const round of rounds) {
     if (!round.playerName) continue;
@@ -153,11 +167,22 @@ export async function applySweepsScores(golfers: GolferScore[], rounds: SweepsRo
       }
 
       if (!normalizedName) continue;
-      const fuzzyMatch = fuse.search(normalizedName).find((result) => (result.score ?? Number.POSITIVE_INFINITY) < 0.5);
-      if (fuzzyMatch) {
-        sweepsGrossTotal = fuzzyMatch.item.round.grossTotal ?? null;
-        sweepsPlayerId = fuzzyMatch.item.round.playerId;
-        sweepsPlayerName = fuzzyMatch.item.round.playerName;
+      const nameParts = getNameParts(name);
+      const sameLastName = fuzzyRounds.filter((candidate) => candidate.nameParts.lastName === nameParts.lastName);
+      const fuse = new Fuse(sameLastName, { keys: ['nameParts.firstName'], includeScore: true });
+      const results = fuse.search(nameParts.firstName);
+      console.log(results);
+      if (results.length === 0) continue;
+      const bestMatch = results.reduce((best, current) => {
+        const bestScore = best.score ?? Number.POSITIVE_INFINITY;
+        const currentScore = current.score ?? Number.POSITIVE_INFINITY;
+        return currentScore < bestScore ? current : best;
+      }, results[0]);
+      
+      if (bestMatch.score !== undefined && bestMatch.score < 0.5) {
+        sweepsGrossTotal = bestMatch.item.round.grossTotal ?? null;
+        sweepsPlayerId = bestMatch.item.round.playerId;
+        sweepsPlayerName = bestMatch.item.round.playerName;
         break;
       }
     }
