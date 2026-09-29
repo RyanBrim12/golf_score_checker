@@ -1,10 +1,8 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function SignInPage() {
-  const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -29,8 +27,7 @@ export default function SignInPage() {
         return;
       }
 
-      router.replace('/');
-      router.refresh();
+      window.location.assign('/');
     } catch {
       setError('Unable to sign in right now.');
       setIsSubmitting(false);
