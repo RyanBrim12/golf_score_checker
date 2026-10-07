@@ -34,20 +34,46 @@ function getSessionVersion(): string | null {
   return process.env.AUTH_SESSION_VERSION || null;
 }
 
-async function verifyPassword(password: string, encodedHash: string): Promise<boolean> {
+type PasswordVerification =
+  | { verified: true }
+  | {
+      verified: false;
+      reason: 'malformed_hash' | 'derivation_failed' | 'password_mismatch';
+      hashIssue?: 'unsupported_algorithm' | 'invalid_cost' | 'invalid_block_size' | 'invalid_parallelization' | 'invalid_salt' | 'invalid_derived_key_length';
+      errorName?: string;
+    };
+
+async function verifyPassword(password: string, encodedHash: string): Promise<PasswordVerification> {
   const [algorithm, cost, blockSize, parallelization, salt, expectedHash] = encodedHash.split('$');
-  if (algorithm !== 'scrypt' || !cost || !blockSize || !parallelization || !salt || !expectedHash) return false;
+  const workFactor = Number(cost);
+  const blockSizeValue = Number(blockSize);
+  const parallelizationValue = Number(parallelization);
+  const saltBuffer = salt ? Buffer.from(salt, 'base64url') : Buffer.alloc(0);
+  const expectedKey = expectedHash ? Buffer.from(expectedHash, 'base64url') : Buffer.alloc(0);
+  let hashIssue: Extract<PasswordVerification, { verified: false }>['hashIssue'];
+  if (algorithm !== 'scrypt') hashIssue = 'unsupported_algorithm';
+  else if (!Number.isSafeInteger(workFactor) || workFactor < 2 || (workFactor & (workFactor - 1)) !== 0) hashIssue = 'invalid_cost';
+  else if (!Number.isSafeInteger(blockSizeValue) || blockSizeValue < 1) hashIssue = 'invalid_block_size';
+  else if (!Number.isSafeInteger(parallelizationValue) || parallelizationValue < 1) hashIssue = 'invalid_parallelization';
+  else if (saltBuffer.length === 0) hashIssue = 'invalid_salt';
+  else if (expectedKey.length !== SCRYPT_KEY_LENGTH) hashIssue = 'invalid_derived_key_length';
+  if (hashIssue) return { verified: false, reason: 'malformed_hash', hashIssue };
 
   try {
-    const derivedKey = await deriveKey(password, Buffer.from(salt, 'base64url'), {
-      N: Number(cost),
-      r: Number(blockSize),
-      p: Number(parallelization),
-    }) as Buffer;
-    const expectedKey = Buffer.from(expectedHash, 'base64url');
-    return expectedKey.length === derivedKey.length && timingSafeEqual(derivedKey, expectedKey);
-  } catch {
-    return false;
+    const derivedKey = await deriveKey(password, saltBuffer, {
+      N: workFactor,
+      r: blockSizeValue,
+      p: parallelizationValue,
+    });
+    return timingSafeEqual(derivedKey, expectedKey)
+      ? { verified: true }
+      : { verified: false, reason: 'password_mismatch' };
+  } catch (error) {
+    return {
+      verified: false,
+      reason: 'derivation_failed',
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    };
   }
 }
 
@@ -87,25 +113,52 @@ function configuredCredentials() {
     { role: 'admin' as const, username: process.env.AUTH_ADMIN_USERNAME, passwordHash: process.env.AUTH_ADMIN_PASSWORD_HASH },
   ];
 
-  if (credentials.some(({ username, passwordHash }) => !username || !passwordHash || !getSessionSecret() || !getSessionVersion())) {
-    throw new Error('Authentication credentials are not configured.');
-  }
+  const missingSettings = [
+    ...credentials.flatMap(({ role, username, passwordHash }) => [
+      ...(!username ? [`AUTH_${role.toUpperCase()}_USERNAME`] : []),
+      ...(!passwordHash ? [`AUTH_${role.toUpperCase()}_PASSWORD_HASH`] : []),
+    ]),
+    ...(!getSessionSecret() ? ['AUTH_SESSION_SECRET'] : []),
+    ...(!getSessionVersion() ? ['AUTH_SESSION_VERSION'] : []),
+  ];
 
-  return credentials;
+  return { credentials, missingSettings };
 }
 
-export async function authenticateCredentials(username: string, password: string): Promise<AuthRole | null> {
-  try {
-    const credentials = configuredCredentials();
-    for (const credential of credentials) {
-      if (safeEqual(username, credential.username!) && await verifyPassword(password, credential.passwordHash!)) {
-        return credential.role;
-      }
-    }
-    return null;
-  } catch {
-    return null;
+export type CredentialAuthenticationResult =
+  | { authenticated: true; role: AuthRole }
+  | {
+      authenticated: false;
+      reason: 'configuration_missing' | 'username_not_found' | 'malformed_hash' | 'derivation_failed' | 'password_mismatch';
+      missingSettings?: string[];
+      credentialRole?: AuthRole;
+      hashIssue?: Extract<PasswordVerification, { verified: false }>['hashIssue'];
+      errorName?: string;
+    };
+
+export async function authenticateCredentials(username: string, password: string): Promise<CredentialAuthenticationResult> {
+  const { credentials, missingSettings } = configuredCredentials();
+  if (missingSettings.length > 0) {
+    return { authenticated: false, reason: 'configuration_missing', missingSettings };
   }
+
+  for (const credential of credentials) {
+    if (safeEqual(username, credential.username!)) {
+      const verification = await verifyPassword(password, credential.passwordHash!);
+      if (verification.verified) {
+        return { authenticated: true, role: credential.role };
+      }
+      return {
+        authenticated: false,
+        reason: verification.reason,
+        credentialRole: credential.role,
+        ...('hashIssue' in verification && verification.hashIssue ? { hashIssue: verification.hashIssue } : {}),
+        ...('errorName' in verification ? { errorName: verification.errorName } : {}),
+      };
+    }
+  }
+
+  return { authenticated: false, reason: 'username_not_found' };
 }
 
 export function getAuthenticatedRole(request: Request): AuthRole | null {
