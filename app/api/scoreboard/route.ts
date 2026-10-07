@@ -7,6 +7,9 @@ import { isValidScoreDate } from '@/lib/validation';
 import { applySweepsScores, fetchAllSweepsPlayers, fetchGameByDate, fetchRoundsByGameId } from '@/lib/sweeps';
 import { getAllSweepsMatches } from '@/lib/database';
 
+export const runtime = 'nodejs';
+export const preferredRegion = 'home';
+
 const REQUIRED_ENV = [
   'CLUB_CADDIE_CLUB_ID',
   'CLUB_CADDIE_USERNAME',

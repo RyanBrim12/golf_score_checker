@@ -5,6 +5,9 @@ import { requireSameOrigin } from "@/lib/csrf";
 import { validateName, validateStringInput, sanitizeName } from "@/lib/validation";
 import { createRequestId, internalServerError } from "@/lib/request";
 
+export const runtime = 'nodejs';
+export const preferredRegion = 'home';
+
 export async function GET(request: Request) {
   const authError = authenticate(request);
   if (authError) return authError;

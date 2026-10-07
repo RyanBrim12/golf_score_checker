@@ -6,6 +6,9 @@ import { requireSameOrigin } from '@/lib/csrf';
 import { createRequestId, internalServerError } from '@/lib/request';
 import { isValidScoreDate, validateStringInput, sanitizeName } from '@/lib/validation';
 
+export const runtime = 'nodejs';
+export const preferredRegion = 'home';
+
 const REQUIRED_ENV = ['SWEEPS_API_KEY'];
 
 function validateEnv() {
