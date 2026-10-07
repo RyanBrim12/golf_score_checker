@@ -9,6 +9,17 @@ const logger = {
   error: (message: string, data?: Record<string, unknown>) => console.error(JSON.stringify({ level: 'error', message, ...data })),
 };
 
+function getAuthConfigLog() {
+  return {
+    viewerUsername: process.env.AUTH_VIEWER_USERNAME || null,
+    viewerPasswordHashConfigured: Boolean(process.env.AUTH_VIEWER_PASSWORD_HASH),
+    adminUsername: process.env.AUTH_ADMIN_USERNAME || null,
+    adminPasswordHashConfigured: Boolean(process.env.AUTH_ADMIN_PASSWORD_HASH),
+    sessionSecretConfigured: Boolean(process.env.AUTH_SESSION_SECRET),
+    sessionVersion: process.env.AUTH_SESSION_VERSION || null,
+  };
+}
+
 export async function POST(request: Request) {
   const requestId = createRequestId();
   
@@ -19,6 +30,8 @@ export async function POST(request: Request) {
       logger.info('CSRF validation failed', { requestId, ip: request.headers.get('x-forwarded-for') });
       return csrfError;
     }
+
+    logger.info('Signin attempt received', { requestId, authConfig: getAuthConfigLog() });
 
     const body = await request.json();
     const username = typeof body?.username === 'string' ? body.username.trim() : '';
