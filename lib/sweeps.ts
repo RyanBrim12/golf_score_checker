@@ -1,5 +1,5 @@
 import type { GolferScore } from '@/lib/types';
-import { createSweepsMatch, getCachedSweepsMatchByName } from './database';
+import { createSweepsMatch, getSweepsMatchByName } from './database';
 import { findBestNameMatch, normalizeName, normalizeNamePart } from './nameMatching';
 import type { SweepsRound } from './sweepsApi';
 
@@ -31,7 +31,7 @@ export async function applySweepsScores(golfers: GolferScore[], rounds: SweepsRo
   return Promise.all(golfers.map(async (golfer) => {
     const storedMatch = manualMatches.has(golfer.clubCaddieName)
       ? { sweepsId: manualMatches.get(golfer.clubCaddieName) ?? null }
-      : await getCachedSweepsMatchByName(golfer.clubCaddieName);
+      : await getSweepsMatchByName(golfer.clubCaddieName);
     if (storedMatch) {
       if (storedMatch.sweepsId === null) return { ...golfer, sweepsPlayerId: null, sweepsPlayerName: null, sweepsGrossTotal: undefined };
       const manualRound = rounds.find((round) => round.playerId === storedMatch.sweepsId);

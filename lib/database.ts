@@ -3,6 +3,16 @@ import prisma from './prisma';
 import { revalidateTag, unstable_cache } from 'next/cache';
 
 const MATCH_CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
+const GHIN_MATCH_CACHE_TAG = 'ghin-name-matches';
+const SWEEPS_MATCH_CACHE_TAG = 'sweeps-name-matches';
+
+function invalidateGhinMatchCaches(): void {
+  revalidateTag(GHIN_MATCH_CACHE_TAG);
+}
+
+function invalidateSweepsMatchCaches(): void {
+  revalidateTag(SWEEPS_MATCH_CACHE_TAG);
+}
 
 export interface Match {
   ghin: number | null;
@@ -36,7 +46,7 @@ export async function createMatch(match: Match): Promise<CreateResult> {
     throw error;
   }
 
-  revalidateTag('ghin-name-matches');
+  invalidateGhinMatchCaches();
   return 'created';
 }
 
@@ -44,7 +54,7 @@ export async function createMatches(matches: Match[]): Promise<void> {
   await prisma.$transaction(
     matches.map((match) => prisma.ghinNameMatch.create({ data: match }))
   );
-  revalidateTag('ghin-name-matches');
+  invalidateGhinMatchCaches();
 }
 
 async function getMatchByGhinFromDb(ghin: number): Promise<Match | null> {
@@ -57,7 +67,7 @@ const getCachedMatchByGhin = unstable_cache(
   ['ghin-name-match-by-ghin'],
   {
     revalidate: MATCH_CACHE_TTL_SECONDS,
-    tags: ['ghin-name-matches'],
+    tags: [GHIN_MATCH_CACHE_TAG],
   }
 );
 
@@ -75,15 +85,13 @@ const getCachedMatchByName = unstable_cache(
   ['ghin-name-match-by-name'],
   {
     revalidate: MATCH_CACHE_TTL_SECONDS,
-    tags: ['ghin-name-matches'],
+    tags: [GHIN_MATCH_CACHE_TAG],
   }
 );
 
 export async function getMatchByName(name: string): Promise<Match | null> {
   return getCachedMatchByName(name);
 }
-
-export { getCachedMatchByName };
 
 async function getAllMatchesFromDb(): Promise<Match[]> {
   const records = await prisma.ghinNameMatch.findMany({ orderBy: { name: 'asc' } });
@@ -95,7 +103,7 @@ const getCachedAllMatches = unstable_cache(
   ['ghin-name-matches-all'],
   {
     revalidate: MATCH_CACHE_TTL_SECONDS,
-    tags: ['ghin-name-matches'],
+    tags: [GHIN_MATCH_CACHE_TAG],
   }
 );
 
@@ -110,7 +118,7 @@ export async function updateMatch(name: string, newGhin: number | null): Promise
   });
   if (result.count === 0) return 'not-found';
 
-  revalidateTag('ghin-name-matches');
+  invalidateGhinMatchCaches();
   return 'updated';
 }
 
@@ -118,7 +126,7 @@ export async function deleteMatch(name: string): Promise<DeleteResult> {
   const record = await prisma.ghinNameMatch.deleteMany({ where: { name } });
   if (record.count === 0) return 'not-found';
 
-  revalidateTag('ghin-name-matches');
+  invalidateGhinMatchCaches();
   return 'deleted';
 }
 
@@ -130,7 +138,7 @@ export async function createSweepsMatch(match: SweepsMatch): Promise<CreateResul
     throw error;
   }
 
-  revalidateTag('sweeps-name-matches');
+  invalidateSweepsMatchCaches();
   return 'created';
 }
 
@@ -138,7 +146,7 @@ export async function updateSweepsMatch(name: string, sweepsId: number | null): 
   const result = await prisma.sweepsNameMatch.updateMany({ where: { name }, data: { sweepsId } });
   if (result.count === 0) return 'not-found';
 
-  revalidateTag('sweeps-name-matches');
+  invalidateSweepsMatchCaches();
   return 'updated';
 }
 
@@ -152,7 +160,7 @@ const getCachedAllSweepsMatches = unstable_cache(
   ['sweeps-name-matches-all'],
   {
     revalidate: MATCH_CACHE_TTL_SECONDS,
-    tags: ['sweeps-name-matches'],
+    tags: [SWEEPS_MATCH_CACHE_TAG],
   }
 );
 
@@ -168,17 +176,19 @@ const getCachedSweepsMatchByName = unstable_cache(
   ['sweeps-name-match-by-name'],
   {
     revalidate: MATCH_CACHE_TTL_SECONDS,
-    tags: ['sweeps-name-matches'],
+    tags: [SWEEPS_MATCH_CACHE_TAG],
   }
 );
 
-export { getCachedSweepsMatchByName };
+export async function getSweepsMatchByName(name: string): Promise<SweepsMatch | null> {
+  return getCachedSweepsMatchByName(name);
+}
 
 export async function deleteSweepsMatch(name: string): Promise<DeleteResult> {
   const record = await prisma.sweepsNameMatch.deleteMany({ where: { name } });
   if (record.count === 0) return 'not-found';
 
-  revalidateTag('sweeps-name-matches');
+  invalidateSweepsMatchCaches();
   return 'deleted';
 }
 
