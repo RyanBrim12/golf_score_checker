@@ -81,11 +81,14 @@ export function useScoreboard() {
 
     try {
       const match = await saveSweepsMatch(targetName, sweepsId, date);
+      const selectedSweepsPlayer = sweepsGolfers.find((player) => player.playerId === sweepsId);
       setScores((current) => updateGolferByName(current, targetName, (golfer) => ({
         ...golfer,
-        sweepsPlayerId: match?.sweepsPlayerId ?? (sweepsId === null ? null : golfer.sweepsPlayerId),
-        sweepsPlayerName: match?.sweepsPlayerName ?? (sweepsId === null ? null : golfer.sweepsPlayerName),
-        sweepsGrossTotal: match?.sweepsGrossTotal ?? (sweepsId === null ? undefined : golfer.sweepsGrossTotal),
+        sweepsPlayerId: sweepsId === null ? null : match?.sweepsPlayerId ?? sweepsId,
+        sweepsPlayerName: sweepsId === null
+          ? null
+          : match?.sweepsPlayerName ?? selectedSweepsPlayer?.playerName ?? golfer.sweepsPlayerName ?? null,
+        sweepsGrossTotal: sweepsId === null ? undefined : match?.sweepsGrossTotal ?? undefined,
       })));
     } catch (matchError) {
       setError(matchError instanceof Error ? matchError.message : 'Unknown error occurred while saving sweeps match.');

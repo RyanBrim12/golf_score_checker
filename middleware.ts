@@ -14,34 +14,15 @@ function encodeText(value: string): Uint8Array {
   return new TextEncoder().encode(value);
 }
 
-function getClientAddress(request: NextRequest): string {
-  // Use x-forwarded-for first (more reliable with reverse proxies)
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
-  }
-  
-  // Fallback to x-real-ip
+function getClientAddress(request: NextRequest): string | null {
+  const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0];
   const realIp = request.headers.get('x-real-ip');
-  if (realIp) {
-    return realIp.trim();
-  }
-  
-  // Support Cloudflare
-  const cfIP = request.headers.get('cf-connecting-ip');
-  if (cfIP) {
-    return cfIP.trim();
-  }
-  
-  // Support Vercel
-  const vercelIP = request.headers.get('x-vercel-forwarded-for');
-  if (vercelIP) {
-    return vercelIP.split(',')[0].trim();
-  }
-  
-  // IMPORTANT: Fail-safe - throw error instead of shared bucket
-  // This prevents rate limit bypass by missing headers
-  throw new Error('Unable to determine client IP address - check proxy configuration');
+  const cfIp = request.headers.get('cf-connecting-ip');
+  const vercelIp = request.headers.get('x-vercel-forwarded-for')?.split(',')[0];
+
+  return [forwardedFor, realIp, cfIp, vercelIp]
+    .map((address) => address?.trim())
+    .find((address): address is string => Boolean(address)) ?? null;
 }
 
 function rateLimit(request: NextRequest): NextResponse | null {
@@ -50,28 +31,28 @@ function rateLimit(request: NextRequest): NextResponse | null {
   const isApiRequest = pathname.startsWith('/api/');
   if (!isSignIn && !isApiRequest) return null;
 
-  try {
-    const limit = isSignIn ? 10 : 120;
-    const windowMs = isSignIn ? 15 * 60 * 1000 : 60 * 1000;
-    const bucket = isSignIn ? 'signin' : 'api';
-    const clientAddress = getClientAddress(request);
-    const result = consumeRateLimit(`${clientAddress}:${bucket}`, limit, windowMs);
-    
-    if (result.allowed) return null;
+  const limit = isSignIn ? 10 : 120;
+  const windowMs = isSignIn ? 15 * 60 * 1000 : 60 * 1000;
+  const bucket = isSignIn ? 'signin' : 'api';
+  const clientAddress = getClientAddress(request)
+    ?? (process.env.NODE_ENV !== 'production' ? 'local-development' : null);
 
-    const response = NextResponse.json({ message: 'Too many requests. Please try again later.' }, { status: 429 });
-    response.headers.set('Retry-After', String(result.retryAfterSeconds));
-    response.headers.set('X-RateLimit-Limit', String(limit));
-    response.headers.set('X-RateLimit-Remaining', String(result.remaining));
-    return response;
-  } catch (error) {
-    // If we can't determine client IP, reject the request to prevent bypass
-    console.error('Rate limiting error:', error);
+  if (!clientAddress) {
+    console.error('Rate limiting unavailable: client IP address is missing. Configure proxy forwarding headers.');
     return NextResponse.json(
-      { message: 'Request validation failed.' },
-      { status: 400 }
+      { message: 'Rate limiting is unavailable. Check the server proxy configuration.' },
+      { status: 503 },
     );
   }
+
+  const result = consumeRateLimit(`${clientAddress}:${bucket}`, limit, windowMs);
+  if (result.allowed) return null;
+
+  const response = NextResponse.json({ message: 'Too many requests. Please try again later.' }, { status: 429 });
+  response.headers.set('Retry-After', String(result.retryAfterSeconds));
+  response.headers.set('X-RateLimit-Limit', String(limit));
+  response.headers.set('X-RateLimit-Remaining', String(result.remaining));
+  return response;
 }
 
 async function hasValidSession(request: NextRequest): Promise<boolean> {

@@ -1,4 +1,4 @@
-import type { GolferScore, SweepsPlayerOption } from './types';
+import type { GhinGolfer, GolferScore, SweepsPlayerOption } from './types';
 
 export type ScoreboardResponse = {
   scores: GolferScore[];
@@ -15,6 +15,16 @@ export type GhinMatchData = {
   club: string;
 };
 
+export type GhinSearchParams = {
+  firstName: string;
+  lastName: string;
+  ghinNumber: string;
+  state: string;
+  club: string;
+  page: number;
+  perPage: number;
+};
+
 export type GhinScoreResult = {
   score: number | null;
   postedAt: string | null;
@@ -27,6 +37,27 @@ export type SweepsMatchResult = {
   sweepsPlayerName: string | null;
   sweepsGrossTotal: number | null;
 };
+
+export async function searchGhin(params: GhinSearchParams, signal: AbortSignal): Promise<GhinGolfer[]> {
+  const response = await fetch('/api/ghin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal,
+    body: JSON.stringify({
+      firstName: params.firstName,
+      lastName: params.lastName,
+      ghinNumber: params.ghinNumber,
+      state: params.state,
+      club: params.club,
+      page: params.page,
+      per_page: params.perPage,
+    }),
+  });
+  if (!response.ok) await readError(response, 'Failed to fetch GHIN golfers.');
+
+  const result = await response.json();
+  return Array.isArray(result?.golfers) ? result.golfers as GhinGolfer[] : [];
+}
 
 async function readError(response: Response, fallback: string): Promise<never> {
   const result = await response.json().catch(() => null);
