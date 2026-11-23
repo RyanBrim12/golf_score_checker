@@ -1,59 +1,10 @@
 import Fuse from 'fuse.js';
-import type { GolferScore, SweepsPlayer } from '@/lib/types';
+import type { GolferScore } from '@/lib/types';
 import { createSweepsMatch, getCachedSweepsMatchByName } from './database';
+import type { SweepsRound } from './sweepsApi';
 
-const BASE_URL = 'https://sweeps.teecrew.app/api/v1';
-
-export type SweepsRound = {
-  id?: number | null;
-  gameId?: number | null;
-  playerId?: number | null;
-  playerName?: string | null;
-  grossTotal?: number | null;
-  netTotal?: number | null;
-  stablefordPoints?: number | null;
-  status?: string | null;
-  date?: string | null;
-};
-
-function normalizeSweepsPlayer(player: Record<string, unknown>): SweepsPlayer | null {
-  if (typeof player.playerId !== 'number' || typeof player.playerName !== 'string') return null;
-
-  return {
-    membershipId: typeof player.membershipId === 'string' || typeof player.membershipId === 'number' ? player.membershipId : null,
-    playerId: player.playerId,
-    playerName: player.playerName,
-    handicap: typeof player.handicap === 'number' ? player.handicap : null,
-    handicapCalculated: typeof player.handicapCalculated === 'number' ? player.handicapCalculated : null,
-    handicapStatus: typeof player.handicapStatus === 'string' ? player.handicapStatus : null,
-    role: typeof player.role === 'string' ? player.role : null,
-    isActive: typeof player.isActive === 'boolean' ? player.isActive : null,
-  };
-}
-
-export async function fetchAllSweepsPlayers(): Promise<SweepsPlayer[]> {
-  const players: SweepsPlayer[] = [];
-  let offset = 0;
-
-  while (true) {
-    const response = await fetch(`${BASE_URL}/players?limit=200&offset=${offset}`, {
-      method: 'GET',
-      headers: { 'Authorization': `Bearer ${process.env.SWEEPS_API_KEY}` },
-    });
-    if (!response.ok) throw new Error(`Sweeps players request failed with status ${response.status}.`);
-
-    const jsonResponse = await response.json();
-    const page = (jsonResponse.data ?? [])
-      .map((player: Record<string, unknown>) => normalizeSweepsPlayer(player))
-      .filter((player: SweepsPlayer | null): player is SweepsPlayer => player !== null);
-    players.push(...page);
-
-    if (!jsonResponse.pagination?.hasMore || page.length === 0) break;
-    offset += 200;
-  }
-
-  return players;
-}
+export { fetchAllSweepsPlayers, fetchGameByDate, fetchRoundsByGameId } from './sweepsApi';
+export type { SweepsGame, SweepsRound } from './sweepsApi';
 
 function normalizeName(name: string) {
   return name
@@ -75,54 +26,6 @@ function getNameParts(name: string) {
     firstName: normalizeNamePart(parts[0] ?? ''),
     lastName: normalizeNamePart(parts[parts.length - 1] ?? ''),
   };
-}
-
-function normalizeRound(round: Record<string, unknown>): SweepsRound {
-  return {
-    id: typeof round.id === 'number' ? round.id : null,
-    gameId: typeof round.gameId === 'number' ? round.gameId : null,
-    playerId: typeof round.playerId === 'number' ? round.playerId : null,
-    playerName: typeof round.playerName === 'string' ? round.playerName : null,
-    grossTotal: typeof round.grossTotal === 'number' ? round.grossTotal : null,
-    netTotal: typeof round.netTotal === 'number' ? round.netTotal : null,
-    stablefordPoints: typeof round.stablefordPoints === 'number' ? round.stablefordPoints : null,
-    status: typeof round.status === 'string' ? round.status : null,
-    date: typeof round.date === 'string' ? round.date : null,
-  };
-}
-
-export async function fetchGameByDate(date: string) {
-  let offset = 0;
-
-  while (true) {
-    const response = await fetch(`${BASE_URL}/games?offset=${offset}&limit=200`, { method: 'GET', headers: { 'Authorization': `Bearer ${process.env.SWEEPS_API_KEY}` } });
-    const jsonResponse = await response.json();
-    const games = jsonResponse.data ?? [];
-    const game = games.find((g: any) => g.date === date);
-    if (game) return game;
-
-    const oldestGameDate = games[games.length - 1]?.date;
-    if (oldestGameDate < date) return null;
-
-    const pagination = jsonResponse.pagination;
-    if (!pagination?.hasMore) return null;
-    offset += 200;
-  }
-}
-
-export async function fetchRoundsByGameId(gameId: string): Promise<SweepsRound[]> {
-  let response = await fetch(`${BASE_URL}/rounds?game_id=${gameId}&limit=200`, { method: 'GET', headers: { 'Authorization': `Bearer ${process.env.SWEEPS_API_KEY}` } });
-  let jsonResponse = await response.json();
-  let rounds = (jsonResponse.data ?? []).map((round: Record<string, unknown>) => normalizeRound(round));
-  let pagination = jsonResponse['pagination'];
-  while (pagination?.hasMore) {
-    const offset = rounds.length;
-    response = await fetch(`${BASE_URL}/rounds?game_id=${gameId}&limit=200&offset=${offset}`, { method: 'GET', headers: { 'Authorization': `Bearer ${process.env.SWEEPS_API_KEY}` } });
-    jsonResponse = await response.json();
-    rounds = [...rounds, ...(jsonResponse.data ?? []).map((round: Record<string, unknown>) => normalizeRound(round))];
-    pagination = jsonResponse['pagination'];
-  }
-  return rounds;
 }
 
 export async function applySweepsScores(golfers: GolferScore[], rounds: SweepsRound[], manualMatches: Map<string, number | null> = new Map()): Promise<GolferScore[]> {
