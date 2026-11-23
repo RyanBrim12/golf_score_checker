@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { fetchGameByDate, fetchRoundsByGameId, serializeSweepsRound } from '@/lib/sweeps';
 import { createSweepsMatch, deleteSweepsMatch, getAllSweepsMatches, updateSweepsMatch } from '@/lib/database';
 import { withApiHandler } from '@/lib/request';
-import { isValidScoreDate, validateStringInput, sanitizeName } from '@/lib/validation';
+import { isValidScoreDate, parseNameInput } from '@/lib/validation';
 
 export const runtime = 'nodejs';
 export const preferredRegion = 'home';
@@ -32,17 +32,16 @@ export async function GET(request: Request) {
 async function saveMatch(request: Request, update: boolean) {
   return withApiHandler(request, { auth: 'admin', requireSameOrigin: true }, async () => {
     const body = await request.json();
-    const name = typeof body?.name === 'string' ? body.name.trim() : '';
+    const name = parseNameInput(body?.name);
     const date = typeof body?.date === 'string' ? body.date : null;
     const sweepsId = body?.sweepsId === null ? null : typeof body?.sweepsId === 'number' && Number.isInteger(body.sweepsId) && body.sweepsId > 0 ? body.sweepsId : undefined;
-    if (!validateStringInput(name, 1, 100) || sweepsId === undefined) {
+    if (name === null || sweepsId === undefined) {
       return NextResponse.json({ message: 'Provide both golfer names.' }, { status: 400 });
     }
 
-    const sanitizedName = sanitizeName(name);
     const result = update
-      ? await updateSweepsMatch(sanitizedName, sweepsId)
-      : await createSweepsMatch({ name: sanitizedName, sweepsId });
+      ? await updateSweepsMatch(name, sweepsId)
+      : await createSweepsMatch({ name, sweepsId });
     const saved = result === 'updated' || result === 'created';
     let match = null;
     if (saved && sweepsId !== null && isValidScoreDate(date)) {
@@ -77,11 +76,11 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   return withApiHandler(request, { auth: 'admin', requireSameOrigin: true }, async () => {
     const body = await request.json();
-    const name = typeof body?.name === 'string' ? body.name.trim() : '';
-    if (!validateStringInput(name, 1, 100)) {
+    const name = parseNameInput(body?.name);
+    if (name === null) {
       return NextResponse.json({ message: 'Provide a golfer name.' }, { status: 400 });
     }
-    const result = await deleteSweepsMatch(sanitizeName(name));
+    const result = await deleteSweepsMatch(name);
     const deleted = result === 'deleted';
     return NextResponse.json({ message: deleted ? 'Sweeps match removed' : 'No sweeps match found' }, { status: deleted ? 200 : 404 });
   });

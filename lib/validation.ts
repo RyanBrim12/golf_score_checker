@@ -20,21 +20,13 @@ export function validateStringInput(value: unknown, minLength: number = 1, maxLe
   return length >= minLength && length <= maxLength;
 }
 
-/**
- * Validate name field (firstName, lastName, name)
- * Ensures string type and length constraints
- */
-export function validateName(value: unknown): value is string {
-  if (!validateStringInput(value, 1, MAX_NAME_LENGTH)) return false;
-  // Allow letters, spaces, hyphens, and apostrophes
-  return /^[a-zA-Z\s'-]+$/.test(value);
-}
+export function parseNameInput(value: unknown): string | null {
+  if (typeof value !== 'string' || /[\u0000-\u001F\u007F-\u009F]/.test(value)) return null;
 
-/**
- * Sanitize name input to prevent injection
- */
-export function sanitizeName(value: string): string {
-  return value.trim().slice(0, MAX_NAME_LENGTH).replace(/[^a-zA-Z\s'-]/g, '');
+  const name = value.trim();
+  if (name.length === 0 || name.length > MAX_NAME_LENGTH) return null;
+
+  return name;
 }
 
 export function isValidScoreDate(value: string | null): value is string {
