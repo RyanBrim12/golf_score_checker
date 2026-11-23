@@ -65,9 +65,10 @@ async function saveMatch(request: Request, update: boolean) {
     }
 
     const sanitizedName = sanitizeName(name);
-    const saved = update
+    const result = update
       ? await updateSweepsMatch(sanitizedName, sweepsId)
       : await createSweepsMatch({ name: sanitizedName, sweepsId });
+    const saved = result === 'updated' || result === 'created';
     let match = null;
     if (saved && sweepsId !== null && isValidScoreDate(date)) {
       const game = await fetchGameByDate(date);
@@ -83,7 +84,9 @@ async function saveMatch(request: Request, update: boolean) {
     }
     return NextResponse.json(
       { message: saved ? 'Sweeps match saved' : 'Sweeps match could not be saved', match },
-      { status: saved ? (update ? 200 : 201) : update ? 404 : 409 },
+      {
+        status: result === 'created' ? 201 : result === 'updated' ? 200 : result === 'not-found' ? 404 : 409,
+      },
     );
   } catch (error: unknown) {
     return internalServerError(requestId, error);
@@ -110,7 +113,8 @@ export async function DELETE(request: Request) {
     if (!validateStringInput(name, 1, 100)) {
       return NextResponse.json({ message: 'Provide a golfer name.' }, { status: 400 });
     }
-    const deleted = await deleteSweepsMatch(sanitizeName(name));
+    const result = await deleteSweepsMatch(sanitizeName(name));
+    const deleted = result === 'deleted';
     return NextResponse.json({ message: deleted ? 'Sweeps match removed' : 'No sweeps match found' }, { status: deleted ? 200 : 404 });
   } catch (error: unknown) {
     return internalServerError(requestId, error);

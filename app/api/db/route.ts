@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     const sanitizedName = sanitizeName(name);
 
     const result = await createMatch({ ghin, name: sanitizedName });
-    if (result) {
+    if (result === 'created') {
       const response = NextResponse.json(
         { message: 'Match entry created' },
         { status: 201 }
@@ -92,7 +92,7 @@ export async function PATCH(request: Request) {
     const sanitizedName = sanitizeName(name);
 
     const result = await updateMatch(sanitizedName, ghin);
-    if (result) {
+    if (result === 'updated') {
       const response = NextResponse.json(
         { message: 'Match entry updated' },
         { status: 200 }

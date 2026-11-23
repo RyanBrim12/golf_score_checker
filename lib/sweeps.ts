@@ -187,6 +187,7 @@ export async function applySweepsScores(golfers: GolferScore[], rounds: SweepsRo
     }
 
     if (sweepsGrossTotal !== undefined && sweepsPlayerId !== null && sweepsPlayerId !== undefined) {
+      // A concurrent request may have already created this match; other database errors still propagate.
       await createSweepsMatch({ name: golfer.clubCaddieName, sweepsId: sweepsPlayerId });
     }
     return sweepsGrossTotal === undefined ? golfer : { ...golfer, sweepsPlayerId, sweepsPlayerName, sweepsGrossTotal };

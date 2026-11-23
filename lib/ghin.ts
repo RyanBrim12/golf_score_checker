@@ -142,6 +142,7 @@ export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[
     }
 
     const ghinNumber = matchedGolfer.ghin;
+    // A concurrent request may have already created this match; other database errors still propagate.
     await createMatch({ ghin: ghinNumber, name: golfer.name });
 
     const scoreResponse = await ghin.golfers.getScores(ghinNumber, {

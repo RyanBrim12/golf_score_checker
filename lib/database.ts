@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from './prisma';
 import { revalidateTag, unstable_cache } from 'next/cache';
 
@@ -13,20 +14,30 @@ export interface SweepsMatch {
   sweepsId: number | null;
 }
 
+export type CreateResult = 'created' | 'already-exists';
+export type UpdateResult = 'updated' | 'not-found';
+export type DeleteResult = 'deleted' | 'not-found';
+
+function isUniqueConstraintViolation(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
+}
+
 export async function initDb(): Promise<void> {
   await prisma.$connect();
 }
 
-export async function createMatch(match: Match): Promise<boolean> {
+export async function createMatch(match: Match): Promise<CreateResult> {
   try {
     await prisma.ghinNameMatch.create({
       data: match,
     });
-    revalidateTag('ghin-name-matches');
-    return true;
   } catch (error: unknown) {
-    return false;
+    if (isUniqueConstraintViolation(error)) return 'already-exists';
+    throw error;
   }
+
+  revalidateTag('ghin-name-matches');
+  return 'created';
 }
 
 export async function createMatches(matches: Match[]): Promise<void> {
@@ -92,36 +103,43 @@ export async function getAllMatches(): Promise<Match[]> {
   return getCachedAllMatches();
 }
 
-export async function updateMatch(name: string, newGhin: number): Promise<boolean> {
+export async function updateMatch(name: string, newGhin: number | null): Promise<UpdateResult> {
   const result = await prisma.ghinNameMatch.updateMany({
     where: { name },
     data: { ghin: newGhin },
   });
-  if (result.count > 0) revalidateTag('ghin-name-matches');
+  if (result.count === 0) return 'not-found';
 
-  return result.count > 0;
+  revalidateTag('ghin-name-matches');
+  return 'updated';
 }
 
-export async function deleteMatch(name: string): Promise<boolean> {
+export async function deleteMatch(name: string): Promise<DeleteResult> {
   const record = await prisma.ghinNameMatch.deleteMany({ where: { name } });
-  if (record.count > 0) revalidateTag('ghin-name-matches');
-  return record.count > 0;
+  if (record.count === 0) return 'not-found';
+
+  revalidateTag('ghin-name-matches');
+  return 'deleted';
 }
 
-export async function createSweepsMatch(match: SweepsMatch): Promise<boolean> {
+export async function createSweepsMatch(match: SweepsMatch): Promise<CreateResult> {
   try {
     await prisma.sweepsNameMatch.create({ data: match });
-    revalidateTag('sweeps-name-matches');
-    return true;
   } catch (error: unknown) {
-    return false;
+    if (isUniqueConstraintViolation(error)) return 'already-exists';
+    throw error;
   }
+
+  revalidateTag('sweeps-name-matches');
+  return 'created';
 }
 
-export async function updateSweepsMatch(name: string, sweepsId: number | null): Promise<boolean> {
+export async function updateSweepsMatch(name: string, sweepsId: number | null): Promise<UpdateResult> {
   const result = await prisma.sweepsNameMatch.updateMany({ where: { name }, data: { sweepsId } });
-  if (result.count > 0) revalidateTag('sweeps-name-matches');
-  return result.count > 0;
+  if (result.count === 0) return 'not-found';
+
+  revalidateTag('sweeps-name-matches');
+  return 'updated';
 }
 
 async function getAllSweepsMatchesFromDb(): Promise<SweepsMatch[]> {
@@ -156,10 +174,12 @@ const getCachedSweepsMatchByName = unstable_cache(
 
 export { getCachedSweepsMatchByName };
 
-export async function deleteSweepsMatch(name: string): Promise<boolean> {
+export async function deleteSweepsMatch(name: string): Promise<DeleteResult> {
   const record = await prisma.sweepsNameMatch.deleteMany({ where: { name } });
-  if (record.count > 0) revalidateTag('sweeps-name-matches');
-  return record.count > 0;
+  if (record.count === 0) return 'not-found';
+
+  revalidateTag('sweeps-name-matches');
+  return 'deleted';
 }
 
 export async function closeDb(): Promise<void> {

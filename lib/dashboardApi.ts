@@ -85,7 +85,7 @@ export async function saveGhinMatch(name: string, ghin: number | null): Promise<
     body,
   });
 
-  if (!response.ok) {
+  if (response.status === 404) {
     response = await fetch('/api/db', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -121,7 +121,7 @@ export async function saveSweepsMatch(
     body,
   });
 
-  if (!response.ok) {
+  if (response.status === 404) {
     response = await fetch('/api/sweeps', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
