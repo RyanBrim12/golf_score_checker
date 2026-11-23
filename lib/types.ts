@@ -33,7 +33,7 @@ export type GolferScore = {
 export type GhinScoreResponse = {
   scores?: Array<{
     adjusted_gross_score?: number | null;
-    course_id?: string | null;
+    course_id?: string | number | null;
     posted_at?: string | Date | null;
     score_type?: string | null;
     score_type_display_full?: string | null;
