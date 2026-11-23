@@ -1,24 +1,10 @@
-import Fuse from 'fuse.js';
 import type { GolferScore } from '@/lib/types';
 import { createSweepsMatch, getCachedSweepsMatchByName } from './database';
+import { findBestNameMatch, normalizeName, normalizeNamePart } from './nameMatching';
 import type { SweepsRound } from './sweepsApi';
 
 export { fetchAllSweepsPlayers, fetchGameByDate, fetchRoundsByGameId } from './sweepsApi';
 export type { SweepsGame, SweepsRound } from './sweepsApi';
-
-function normalizeName(name: string) {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-    .split(/\s+/)
-    .sort()
-    .join(' ');
-}
-
-function normalizeNamePart(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-}
 
 function getNameParts(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -72,21 +58,17 @@ export async function applySweepsScores(golfers: GolferScore[], rounds: SweepsRo
       if (!normalizedName) continue;
       const nameParts = getNameParts(name);
       const sameLastName = fuzzyRounds.filter((candidate) => candidate.nameParts.lastName === nameParts.lastName);
-      const fuse = new Fuse(sameLastName, { keys: ['nameParts.firstName'], includeScore: true });
-      const results = fuse.search(nameParts.firstName);
-      if (results.length === 0) continue;
-      const bestMatch = results.reduce((best, current) => {
-        const bestScore = best.score ?? Number.POSITIVE_INFINITY;
-        const currentScore = current.score ?? Number.POSITIVE_INFINITY;
-        return currentScore < bestScore ? current : best;
-      }, results[0]);
-      
-      if (bestMatch.score !== undefined && bestMatch.score < 0.5) {
-        sweepsGrossTotal = bestMatch.item.round.grossTotal ?? null;
-        sweepsPlayerId = bestMatch.item.round.playerId;
-        sweepsPlayerName = bestMatch.item.round.playerName;
-        break;
-      }
+      const bestMatch = findBestNameMatch(
+        nameParts.firstName,
+        sameLastName,
+        (candidate) => candidate.nameParts.firstName,
+      );
+      if (!bestMatch) continue;
+
+      sweepsGrossTotal = bestMatch.round.grossTotal ?? null;
+      sweepsPlayerId = bestMatch.round.playerId;
+      sweepsPlayerName = bestMatch.round.playerName;
+      break;
     }
 
     if (sweepsGrossTotal !== undefined && sweepsPlayerId !== null && sweepsPlayerId !== undefined) {

@@ -1,7 +1,7 @@
-import Fuse from 'fuse.js';
 import { GhinClient } from '@spicygolf/ghin';
 import { createMatch, getAllMatches } from './database';
 import type { Match } from './database';
+import { findBestNameMatch } from './nameMatching';
 import type { ClubCaddieGolfer, GhinGolfer, GolferScore, GhinScoreResponse } from './types';
 
 const MAX_CONCURRENT_GOLFERS = 4;
@@ -14,20 +14,6 @@ function normalizeUsedFlag(value: boolean | 'true' | 'false' | null | undefined)
   if (value === true || value === 'true') return true;
   if (value === false || value === 'false') return false;
   return null;
-}
-
-function findBestMatch(firstName: string, golfers: GhinGolfer[]): GhinGolfer | null {
-  const fuse = new Fuse(golfers, { keys: ['first_name'], includeScore: true });
-  const results = fuse.search(firstName);
-
-  if (results.length === 0) return null;
-  const bestMatch = results.reduce((best, current) => {
-    const bestScore = best.score ?? Number.POSITIVE_INFINITY;
-    const currentScore = current.score ?? Number.POSITIVE_INFINITY;
-    return currentScore < bestScore ? current : best;
-  }, results[0]);
-
-  return bestMatch.score !== undefined && bestMatch.score < 0.5 ? bestMatch.item : null;
 }
 
 async function searchGolfers(
@@ -59,7 +45,7 @@ async function searchGolfers(
   golfers = await ghin.golfers.search({last_name: lastName, state: state, club_id: clubId}).catch((error: unknown) => {
     return parseGhinGolferError(error);
   });
-  bestMatch = findBestMatch(firstName, golfers);
+  bestMatch = findBestNameMatch(firstName, golfers, (golfer) => golfer.first_name);
   if (bestMatch) {
     return bestMatch;
   }
@@ -74,7 +60,7 @@ async function searchGolfers(
   golfers = await ghin.golfers.search({last_name: lastName, state: state}).catch((error: unknown) => {
     return parseGhinGolferError(error);
   });
-  bestMatch = findBestMatch(firstName, golfers);
+  bestMatch = findBestNameMatch(firstName, golfers, (golfer) => golfer.first_name);
   if (bestMatch) {
     return bestMatch;
   }
@@ -89,7 +75,7 @@ async function searchGolfers(
   golfers = await ghin.golfers.search({last_name: lastName, country: country}).catch((error: unknown) => {
     return parseGhinGolferError(error);
   });
-  bestMatch = findBestMatch(firstName, golfers);
+  bestMatch = findBestNameMatch(firstName, golfers, (golfer) => golfer.first_name);
   if (bestMatch) {
     return bestMatch;
   }
