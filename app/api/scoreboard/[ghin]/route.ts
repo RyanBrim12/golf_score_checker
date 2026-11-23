@@ -18,7 +18,7 @@ function validateEnv() {
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ ghin: string }> }) {
-  const authError = authenticate(request);
+  const authError = await authenticate(request);
   if (authError) return authError;
   const requestId = createRequestId();
 

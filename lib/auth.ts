@@ -1,10 +1,11 @@
 import { createHmac, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import type { ScryptOptions } from 'node:crypto';
 import { NextResponse } from 'next/server';
+import { AUTH_COOKIE_NAME, SESSION_TTL_SECONDS, getAuthenticatedRole } from './session';
+import type { AuthRole } from './session';
 
-export type AuthRole = 'viewer' | 'admin';
-
-export const AUTH_COOKIE_NAME = 'golf_score_session';
+export { AUTH_COOKIE_NAME, getAuthenticatedRole };
+export type { AuthRole };
 const SCRYPT_KEY_LENGTH = 64;
 
 function deriveKey(password: string, salt: Buffer, options: ScryptOptions): Promise<Buffer> {
@@ -65,7 +66,7 @@ export function createSessionCookie(role: AuthRole) {
     sameSite: 'lax' as const,
     secure: process.env.NODE_ENV === 'production',
     path: '/',
-    maxAge: 60 * 60 * 8,
+    maxAge: SESSION_TTL_SECONDS,
   };
 }
 
@@ -108,35 +109,8 @@ export async function authenticateCredentials(username: string, password: string
   }
 }
 
-export function getAuthenticatedRole(request: Request): AuthRole | null {
-  const secret = getSessionSecret();
-  if (!secret) return null;
-
-  const cookieHeader = request.headers.get('cookie') ?? '';
-  const cookie = cookieHeader.split(';').map((part) => part.trim()).find((part) => part.startsWith(`${AUTH_COOKIE_NAME}=`));
-  if (!cookie) return null;
-
-  let value: string;
-  try {
-    value = decodeURIComponent(cookie.slice(AUTH_COOKIE_NAME.length + 1));
-  } catch {
-    return null;
-  }
-
-  const [role, issuedAt, version, signature] = value.split('.');
-  if ((role !== 'viewer' && role !== 'admin') || !issuedAt || !version || !signature || version !== getSessionVersion()) return null;
-
-  const issuedAtNumber = Number(issuedAt);
-  const maxAge = 60 * 60 * 8 * 1000;
-  const age = Date.now() - issuedAtNumber;
-  if (!Number.isInteger(issuedAtNumber) || age < 0 || age > maxAge) return null;
-
-  const expectedSignature = createHmac('sha256', secret).update(`${role}.${issuedAt}.${version}`).digest('base64url');
-  return safeEqual(signature, expectedSignature) ? role : null;
-}
-
-export function authenticate(request: Request, requiredRole: AuthRole = 'viewer'): NextResponse | null {
-  const role = getAuthenticatedRole(request);
+export async function authenticate(request: Request, requiredRole: AuthRole = 'viewer'): Promise<NextResponse | null> {
+  const role = await getAuthenticatedRole(request);
   if (!role || (requiredRole === 'admin' && role !== 'admin')) {
     return NextResponse.json({ message: 'Authentication required.' }, { status: 401 });
   }

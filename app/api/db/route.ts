@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 export const preferredRegion = 'home';
 
 export async function GET(request: Request) {
-  const authError = authenticate(request);
+  const authError = await authenticate(request);
   if (authError) return authError;
 
   const users = await getAllMatches();
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const csrfError = requireSameOrigin(request);
     if (csrfError) return csrfError;
 
-    const authError = authenticate(request, 'admin');
+    const authError = await authenticate(request, 'admin');
     if (authError) return authError;
 
     const body = await request.json();
@@ -71,7 +71,7 @@ export async function PATCH(request: Request) {
     const csrfError = requireSameOrigin(request);
     if (csrfError) return csrfError;
 
-    const authError = authenticate(request, 'admin');
+    const authError = await authenticate(request, 'admin');
     if (authError) return authError;
 
     const body = await request.json();

@@ -19,7 +19,7 @@ function validateEnv() {
 }
 
 export async function GET(request: Request) {
-  const authError = authenticate(request);
+  const authError = await authenticate(request);
   if (authError) return authError;
   const requestId = createRequestId();
 
@@ -53,7 +53,7 @@ async function saveMatch(request: Request, update: boolean) {
   try {
     const csrfError = requireSameOrigin(request);
     if (csrfError) return csrfError;
-    const authError = authenticate(request, 'admin');
+    const authError = await authenticate(request, 'admin');
     if (authError) return authError;
 
     const body = await request.json();
@@ -103,7 +103,7 @@ export async function DELETE(request: Request) {
   try {
     const csrfError = requireSameOrigin(request);
     if (csrfError) return csrfError;
-    const authError = authenticate(request, 'admin');
+    const authError = await authenticate(request, 'admin');
     if (authError) return authError;
     const body = await request.json();
     const name = typeof body?.name === 'string' ? body.name.trim() : '';

@@ -15,7 +15,7 @@ function validateEnv() {
 }
 
 export async function POST(request: Request) {
-  const authError = authenticate(request);
+  const authError = await authenticate(request);
   if (authError) return authError;
   const requestId = createRequestId();
 

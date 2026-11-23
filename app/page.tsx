@@ -1,12 +1,11 @@
 import { cookies } from 'next/headers';
 import Dashboard from './components/Dashboard';
 import SignOutButton from './components/SignOutButton';
+import { AUTH_COOKIE_NAME, getAuthenticatedRoleFromCookie } from '@/lib/session';
 
 async function getUserRole() {
-  const sessionCookie = (await cookies()).get('golf_score_session')?.value;
-  const role = sessionCookie?.split('.')[0];
-
-  return role === 'viewer' || role === 'admin' ? role : null;
+  const sessionCookie = (await cookies()).get(AUTH_COOKIE_NAME)?.value;
+  return getAuthenticatedRoleFromCookie(sessionCookie);
 }
 
 export default async function Home() {
