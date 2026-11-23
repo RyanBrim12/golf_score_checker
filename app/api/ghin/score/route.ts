@@ -1,25 +1,12 @@
 import { NextResponse } from 'next/server';
 import { GhinClient } from '@spicygolf/ghin';
 import { parseGhinScoreError } from '@/lib/ghin';
-import { authenticate } from '@/lib/auth';
-import { createRequestId, internalServerError } from '@/lib/request';
+import { withApiHandler } from '@/lib/request';
 import { isValidScoreDate, parsePositiveGhin } from '@/lib/validation';
-
-const REQUIRED_ENV = ['GHIN_USERNAME', 'GHIN_PASSWORD'];
-
-function validateEnv() {
-  const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
-  if (missing.length > 0) {
-    throw new Error(`Missing environment variables: ${missing.join(', ')}`);
-  }
-}
+import { getGhinConfig } from '@/lib/serverConfig';
 
 export async function GET(request: Request) {
-  const authError = await authenticate(request);
-  if (authError) return authError;
-  const requestId = createRequestId();
-
-  try {
+  return withApiHandler(request, { auth: 'viewer' }, async () => {
     const { searchParams } = new URL(request.url);
     const ghinNumber = searchParams.get('ghin');
     const date = searchParams.get('date');
@@ -29,11 +16,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'Invalid ghin or date. Use a positive integer GHIN and a valid date within the last 10 years.' }, { status: 400 });
     }
 
-    validateEnv();
+    const config = getGhinConfig();
 
     const client = new GhinClient({
-      username: process.env.GHIN_USERNAME!,
-      password: process.env.GHIN_PASSWORD!,
+      username: config.username,
+      password: config.password,
     });
 
     const scoreResponse = await client.golfers.getScores(parsedGhin, {
@@ -41,7 +28,7 @@ export async function GET(request: Request) {
       to_date_played: new Date(date),
     }).catch((error: unknown) => parseGhinScoreError(error));
 
-    const courseId = process.env.GHIN_COURSE_ID;
+    const courseId = config.courseId;
     const scoreEntry = scoreResponse?.scores?.[0];
 
     if (!scoreEntry || scoreEntry.adjusted_gross_score === undefined || scoreEntry.adjusted_gross_score === null) {
@@ -56,7 +43,5 @@ export async function GET(request: Request) {
     const scoreType = scoreEntry.score_type_display_full ?? null;
     const used = scoreEntry.used === true || scoreEntry.used === 'true' ? true : scoreEntry.used === false || scoreEntry.used === 'false' ? false : null;
     return NextResponse.json({ score: scoreEntry.adjusted_gross_score, postedAt, scoreType, used, status: 'matched' });
-  } catch (error: unknown) {
-    return internalServerError(requestId, error);
-  }
+  });
 }

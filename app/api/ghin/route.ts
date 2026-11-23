@@ -2,26 +2,12 @@ import { NextResponse } from 'next/server';
 import { GhinClient } from '@spicygolf/ghin';
 import type { GhinGolfer } from '@/lib/types';
 import { parseGhinGolferError } from '@/lib/ghin';
-import { authenticate } from '@/lib/auth';
-import { createRequestId, internalServerError } from '@/lib/request';
-
-const REQUIRED_ENV = ['GHIN_USERNAME', 'GHIN_PASSWORD'];
-
-function validateEnv() {
-  const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
-  if (missing.length > 0) {
-    throw new Error(`Missing environment variables: ${missing.join(', ')}`);
-  }
-}
+import { withApiHandler } from '@/lib/request';
+import { getGhinConfig } from '@/lib/serverConfig';
 
 export async function POST(request: Request) {
-  const authError = await authenticate(request);
-  if (authError) return authError;
-  const requestId = createRequestId();
-
-  try {
-    validateEnv();
-
+  return withApiHandler(request, { auth: 'viewer' }, async () => {
+    const config = getGhinConfig();
     const body = await request.json();
     const firstName = typeof body?.firstName === 'string' ? body.firstName.trim() : '';
     const lastName = typeof body?.lastName === 'string' ? body.lastName.trim() : '';
@@ -40,8 +26,8 @@ export async function POST(request: Request) {
     }
 
     const client = new GhinClient({
-      username: process.env.GHIN_USERNAME!,
-      password: process.env.GHIN_PASSWORD!,
+      username: config.username,
+      password: config.password,
     });
 
     const searchQueries: Array<Record<string, string>> = [];
@@ -56,7 +42,7 @@ export async function POST(request: Request) {
       if (firstName) query.first_name = firstName;
       if (lastName) query.last_name = lastName;
       if (state) query.state = state;
-      if (process.env.GHIN_COUNTRY) query.country = process.env.GHIN_COUNTRY;
+      if (config.country) query.country = config.country;
       query.per_page = String(perPage);
       query.page = String(page);
       searchQueries.push(query);
@@ -74,7 +60,5 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ golfers: [] });
-  } catch (error: unknown) {
-    return internalServerError(requestId, error);
-  }
+  });
 }

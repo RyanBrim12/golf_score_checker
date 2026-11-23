@@ -1,7 +1,48 @@
 import { NextResponse } from 'next/server';
+import { authenticate } from './auth';
+import type { AuthRole } from './session';
+import { requireSameOrigin } from './csrf';
 
 export function createRequestId(): string {
   return crypto.randomUUID();
+}
+
+export type ApiRequestContext = {
+  requestId: string;
+};
+
+export type ApiHandlerOptions = {
+  auth: AuthRole | null;
+  requireSameOrigin?: boolean;
+};
+
+function addRequestId(response: NextResponse, requestId: string): NextResponse {
+  response.headers.set('X-Request-ID', requestId);
+  return response;
+}
+
+export async function withApiHandler(
+  request: Request,
+  options: ApiHandlerOptions,
+  handler: (context: ApiRequestContext) => Promise<NextResponse>,
+): Promise<NextResponse> {
+  const requestId = createRequestId();
+
+  try {
+    if (options.requireSameOrigin) {
+      const csrfError = requireSameOrigin(request);
+      if (csrfError) return addRequestId(csrfError, requestId);
+    }
+
+    if (options.auth) {
+      const authError = await authenticate(request, options.auth);
+      if (authError) return addRequestId(authError, requestId);
+    }
+
+    return addRequestId(await handler({ requestId }), requestId);
+  } catch (error: unknown) {
+    return internalServerError(requestId, error);
+  }
 }
 
 export function internalServerError(requestId: string, error: unknown): NextResponse {

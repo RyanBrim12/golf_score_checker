@@ -1,37 +1,20 @@
 import { NextResponse } from 'next/server';
 import { fetchGameByDate, fetchRoundsByGameId, serializeSweepsRound } from '@/lib/sweeps';
 import { createSweepsMatch, deleteSweepsMatch, getAllSweepsMatches, updateSweepsMatch } from '@/lib/database';
-import { authenticate } from '@/lib/auth';
-import { requireSameOrigin } from '@/lib/csrf';
-import { createRequestId, internalServerError } from '@/lib/request';
+import { withApiHandler } from '@/lib/request';
 import { isValidScoreDate, validateStringInput, sanitizeName } from '@/lib/validation';
 
 export const runtime = 'nodejs';
 export const preferredRegion = 'home';
 
-const REQUIRED_ENV = ['SWEEPS_API_KEY'];
-
-function validateEnv() {
-  const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
-  if (missing.length > 0) {
-    throw new Error(`Missing environment variables: ${missing.join(', ')}`);
-  }
-}
-
 export async function GET(request: Request) {
-  const authError = await authenticate(request);
-  if (authError) return authError;
-  const requestId = createRequestId();
-
-  try {
+  return withApiHandler(request, { auth: 'viewer' }, async () => {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
 
     if (!isValidScoreDate(date)) {
       return NextResponse.json({ message: 'Invalid ghin or date. Use a positive integer GHIN and a valid date within the last 10 years.' }, { status: 400 });
     }
-
-    validateEnv();
 
     const game = await fetchGameByDate(date as string);
     const gameId = game?.id;
@@ -43,19 +26,11 @@ export async function GET(request: Request) {
       rounds: rounds.map((round) => serializeSweepsRound(round, gameId ?? null, date)),
       matches: await getAllSweepsMatches(),
     });
-  } catch (error: unknown) {
-    return internalServerError(requestId, error);
-  }
+  });
 }
 
 async function saveMatch(request: Request, update: boolean) {
-  const requestId = createRequestId();
-  try {
-    const csrfError = requireSameOrigin(request);
-    if (csrfError) return csrfError;
-    const authError = await authenticate(request, 'admin');
-    if (authError) return authError;
-
+  return withApiHandler(request, { auth: 'admin', requireSameOrigin: true }, async () => {
     const body = await request.json();
     const name = typeof body?.name === 'string' ? body.name.trim() : '';
     const date = typeof body?.date === 'string' ? body.date : null;
@@ -88,9 +63,7 @@ async function saveMatch(request: Request, update: boolean) {
         status: result === 'created' ? 201 : result === 'updated' ? 200 : result === 'not-found' ? 404 : 409,
       },
     );
-  } catch (error: unknown) {
-    return internalServerError(requestId, error);
-  }
+  });
 }
 
 export async function POST(request: Request) {
@@ -102,12 +75,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const requestId = createRequestId();
-  try {
-    const csrfError = requireSameOrigin(request);
-    if (csrfError) return csrfError;
-    const authError = await authenticate(request, 'admin');
-    if (authError) return authError;
+  return withApiHandler(request, { auth: 'admin', requireSameOrigin: true }, async () => {
     const body = await request.json();
     const name = typeof body?.name === 'string' ? body.name.trim() : '';
     if (!validateStringInput(name, 1, 100)) {
@@ -116,7 +84,5 @@ export async function DELETE(request: Request) {
     const result = await deleteSweepsMatch(sanitizeName(name));
     const deleted = result === 'deleted';
     return NextResponse.json({ message: deleted ? 'Sweeps match removed' : 'No sweeps match found' }, { status: deleted ? 200 : 404 });
-  } catch (error: unknown) {
-    return internalServerError(requestId, error);
-  }
+  });
 }

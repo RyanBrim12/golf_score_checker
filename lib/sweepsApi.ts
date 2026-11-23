@@ -1,4 +1,5 @@
 import type { SweepsPlayer } from '@/lib/types';
+import { getSweepsConfig } from './serverConfig';
 
 const BASE_URL = 'https://sweeps.teecrew.app/api/v1';
 const PAGE_SIZE = 200;
@@ -50,10 +51,7 @@ async function* fetchSweepsPages(
   endpoint: string,
   query: Record<string, string> = {},
 ): AsyncGenerator<unknown[]> {
-  const apiKey = process.env.SWEEPS_API_KEY;
-  if (!apiKey) {
-    throw new Error('SWEEPS_API_KEY is not configured.');
-  }
+  const { apiKey } = getSweepsConfig();
 
   for (let pageNumber = 0; pageNumber < MAX_PAGES; pageNumber += 1) {
     const url = new URL(`${BASE_URL}${endpoint}`);
