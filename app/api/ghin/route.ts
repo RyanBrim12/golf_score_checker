@@ -14,7 +14,9 @@ export async function POST(request: Request) {
     }
 
     const stringFields = ['firstName', 'lastName', 'ghinNumber', 'state', 'club'] as const;
-    if (stringFields.some((field) => body[field] !== undefined && typeof body[field] !== 'string')) {
+    if (
+      stringFields.some((field) => body[field] !== undefined && typeof body[field] !== 'string')
+    ) {
       return NextResponse.json({ message: 'GHIN search fields must be strings.' }, { status: 400 });
     }
 
@@ -26,7 +28,10 @@ export async function POST(request: Request) {
     const parsedGhin = ghinNumber ? parsePositiveGhin(ghinNumber) : null;
 
     if (ghinNumber && parsedGhin === null) {
-      return NextResponse.json({ message: 'GHIN number must be a positive integer.' }, { status: 400 });
+      return NextResponse.json(
+        { message: 'GHIN number must be a positive integer.' },
+        { status: 400 },
+      );
     }
 
     const page = body.page === undefined ? 1 : body.page;
@@ -34,8 +39,16 @@ export async function POST(request: Request) {
     if (typeof page !== 'number' || !Number.isSafeInteger(page) || page < 1) {
       return NextResponse.json({ message: 'Page must be a positive integer.' }, { status: 400 });
     }
-    if (typeof perPage !== 'number' || !Number.isSafeInteger(perPage) || perPage < 1 || perPage > 100) {
-      return NextResponse.json({ message: 'per_page must be an integer between 1 and 100.' }, { status: 400 });
+    if (
+      typeof perPage !== 'number' ||
+      !Number.isSafeInteger(perPage) ||
+      perPage < 1 ||
+      perPage > 100
+    ) {
+      return NextResponse.json(
+        { message: 'per_page must be an integer between 1 and 100.' },
+        { status: 400 },
+      );
     }
 
     const config = getGhinConfig();
@@ -43,7 +56,7 @@ export async function POST(request: Request) {
     if (!firstName && !lastName && parsedGhin === null) {
       return NextResponse.json(
         { message: 'Provide at least a first name, last name, or GHIN number.' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -56,10 +69,8 @@ export async function POST(request: Request) {
 
     if (parsedGhin !== null) {
       const golfers = [await client.golfers.getOne(parsedGhin)];
-      if (golfers[0])
-        return NextResponse.json({ golfers: golfers});
-    }
-    else if (firstName || lastName) {
+      if (golfers[0]) return NextResponse.json({ golfers: golfers });
+    } else if (firstName || lastName) {
       const query: Record<string, string> = {};
       if (firstName) query.first_name = firstName;
       if (lastName) query.last_name = lastName;
@@ -71,7 +82,9 @@ export async function POST(request: Request) {
     }
 
     for (const query of searchQueries) {
-      const golfers = await client.golfers.search(query as Record<string, string>).catch((error: unknown) => parseGhinGolferError(error));
+      const golfers = await client.golfers
+        .search(query as Record<string, string>)
+        .catch((error: unknown) => parseGhinGolferError(error));
       if (Array.isArray(golfers) && golfers.length > 0) {
         const clubFilteredGolfers = golfers.filter((golfer) => {
           if (!club) return true;

@@ -1,10 +1,10 @@
-import "dotenv/config";
-import { defineConfig } from "prisma/config";
+import 'dotenv/config';
+import { defineConfig } from 'prisma/config';
 
 export default defineConfig({
   earlyAccess: true,
-  schema: "./schema.prisma",
+  schema: './schema.prisma',
   migrations: {
-    path: "./migrations",
+    path: './migrations',
   },
 });

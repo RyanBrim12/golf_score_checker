@@ -51,9 +51,7 @@ export async function createMatch(match: Match): Promise<CreateResult> {
 }
 
 export async function createMatches(matches: Match[]): Promise<void> {
-  await prisma.$transaction(
-    matches.map((match) => prisma.ghinNameMatch.create({ data: match }))
-  );
+  await prisma.$transaction(matches.map((match) => prisma.ghinNameMatch.create({ data: match })));
   invalidateGhinMatchCaches();
 }
 
@@ -68,7 +66,7 @@ const getCachedMatchByGhin = unstable_cache(
   {
     revalidate: MATCH_CACHE_TTL_SECONDS,
     tags: [GHIN_MATCH_CACHE_TAG],
-  }
+  },
 );
 
 export async function getMatchByGhin(ghin: number): Promise<Match | null> {
@@ -86,7 +84,7 @@ const getCachedMatchByName = unstable_cache(
   {
     revalidate: MATCH_CACHE_TTL_SECONDS,
     tags: [GHIN_MATCH_CACHE_TAG],
-  }
+  },
 );
 
 export async function getMatchByName(name: string): Promise<Match | null> {
@@ -98,14 +96,10 @@ async function getAllMatchesFromDb(): Promise<Match[]> {
   return records.map((record) => ({ ghin: record.ghin, name: record.name }));
 }
 
-const getCachedAllMatches = unstable_cache(
-  getAllMatchesFromDb,
-  ['ghin-name-matches-all'],
-  {
-    revalidate: MATCH_CACHE_TTL_SECONDS,
-    tags: [GHIN_MATCH_CACHE_TAG],
-  }
-);
+const getCachedAllMatches = unstable_cache(getAllMatchesFromDb, ['ghin-name-matches-all'], {
+  revalidate: MATCH_CACHE_TTL_SECONDS,
+  tags: [GHIN_MATCH_CACHE_TAG],
+});
 
 export async function getAllMatches(): Promise<Match[]> {
   return getCachedAllMatches();
@@ -142,7 +136,10 @@ export async function createSweepsMatch(match: SweepsMatch): Promise<CreateResul
   return 'created';
 }
 
-export async function updateSweepsMatch(name: string, sweepsId: number | null): Promise<UpdateResult> {
+export async function updateSweepsMatch(
+  name: string,
+  sweepsId: number | null,
+): Promise<UpdateResult> {
   const result = await prisma.sweepsNameMatch.updateMany({ where: { name }, data: { sweepsId } });
   if (result.count === 0) return 'not-found';
 
@@ -161,7 +158,7 @@ const getCachedAllSweepsMatches = unstable_cache(
   {
     revalidate: MATCH_CACHE_TTL_SECONDS,
     tags: [SWEEPS_MATCH_CACHE_TAG],
-  }
+  },
 );
 
 export async function getAllSweepsMatches(): Promise<SweepsMatch[]> {
@@ -177,7 +174,7 @@ const getCachedSweepsMatchByName = unstable_cache(
   {
     revalidate: MATCH_CACHE_TTL_SECONDS,
     tags: [SWEEPS_MATCH_CACHE_TAG],
-  }
+  },
 );
 
 export async function getSweepsMatchByName(name: string): Promise<SweepsMatch | null> {

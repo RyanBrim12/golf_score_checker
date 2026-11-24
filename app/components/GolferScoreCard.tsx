@@ -7,20 +7,32 @@ interface GolferScoreCardProps {
   onMatchClick?: (golfer: GolferScore) => void;
 }
 
-export default function GolferScoreCard({ golfer, date, isUpdating = false, onMatchClick }: GolferScoreCardProps) {
+export default function GolferScoreCard({
+  golfer,
+  date,
+  isUpdating = false,
+  onMatchClick,
+}: GolferScoreCardProps) {
   const postedAt = golfer.postedAt ? new Date(golfer.postedAt) : null;
   const wasPostedLate = postedAt && postedAt > new Date(`${date}T23:59:59`);
-  const postedAtText = postedAt && !Number.isNaN(postedAt.getTime())
-    ? postedAt.toLocaleString(undefined, {
-        month: 'numeric',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-      })
-    : null;
+  const postedAtText =
+    postedAt && !Number.isNaN(postedAt.getTime())
+      ? postedAt.toLocaleString(undefined, {
+          month: 'numeric',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        })
+      : null;
   const scoreType = golfer.scoreType ? golfer.scoreType : null;
-  const formattedScore = golfer.score !== undefined && golfer.score !== null ? `${golfer.used ? '*' : ''}${golfer.score}${scoreType ?? ''}` : null;
-  const sweepsGrossText = golfer.sweepsGrossTotal !== undefined && golfer.sweepsGrossTotal !== null ? `Sweeps: ${golfer.sweepsGrossTotal}` : null;
+  const formattedScore =
+    golfer.score !== undefined && golfer.score !== null
+      ? `${golfer.used ? '*' : ''}${golfer.score}${scoreType ?? ''}`
+      : null;
+  const sweepsGrossText =
+    golfer.sweepsGrossTotal !== undefined && golfer.sweepsGrossTotal !== null
+      ? `Sweeps: ${golfer.sweepsGrossTotal}`
+      : null;
   const statusClass = isUpdating
     ? 'border-blue-400 bg-blue-50/40 animate-pulse'
     : golfer.status === 'matched'
@@ -57,16 +69,49 @@ export default function GolferScoreCard({ golfer, date, isUpdating = false, onMa
           {isUpdating ? (
             <div className="flex items-center gap-1.5 text-xs font-medium text-blue-600 shrink-0">
               <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
               </svg>
             </div>
           ) : statusText ? (
             <div className="text-right">
               <p className={`text-xs font-medium shrink-0 ${statusTextClass}`}>{statusText}</p>
-              {sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}
+              {sweepsGrossText ? (
+                <p className="text-xs text-slate-500">
+                  <span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}
+                </p>
+              ) : null}
             </div>
-          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {formattedScore}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}{sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}</div>}
+          ) : (
+            <div className="text-right">
+              <p>
+                <span className="font-semibold">Score:</span> {formattedScore}
+              </p>
+              {postedAtText ? (
+                <p className="text-xs text-slate-500">
+                  Posted{' '}
+                  <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span>{' '}
+                  {postedAtText}
+                </p>
+              ) : null}
+              {sweepsGrossText ? (
+                <p className="text-xs text-slate-500">
+                  <span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}
+                </p>
+              ) : null}
+            </div>
+          )}
         </div>
       </button>
       {/* ---------- DESKTOP LAYOUT (>= md) ---------- */}
@@ -82,7 +127,9 @@ export default function GolferScoreCard({ golfer, date, isUpdating = false, onMa
             className="min-w-0 w-full truncate rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <span className="font-semibold">Match:</span>{' '}
-            {golfer.matchedFirstName ? `${golfer.matchedFirstName} ${golfer.matchedLastName}` : 'No match'}
+            {golfer.matchedFirstName
+              ? `${golfer.matchedFirstName} ${golfer.matchedLastName}`
+              : 'No match'}
           </button>
         </div>
         <div className="min-w-0">
@@ -100,9 +147,31 @@ export default function GolferScoreCard({ golfer, date, isUpdating = false, onMa
           ) : statusText ? (
             <div className="text-right">
               <p className={`text-sm font-medium ${statusTextClass}`}>{statusText}</p>
-              {sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}
+              {sweepsGrossText ? (
+                <p className="text-xs text-slate-500">
+                  <span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}
+                </p>
+              ) : null}
             </div>
-          ) : <div className="text-right"><p><span className="font-semibold">Score:</span> {formattedScore}</p>{postedAtText ? <p className="text-xs text-slate-500">Posted <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span> {postedAtText}</p> : null}{sweepsGrossText ? <p className="text-xs text-slate-500"><span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}</p> : null}</div>}
+          ) : (
+            <div className="text-right">
+              <p>
+                <span className="font-semibold">Score:</span> {formattedScore}
+              </p>
+              {postedAtText ? (
+                <p className="text-xs text-slate-500">
+                  Posted{' '}
+                  <span className="font-semibold text-red-500">{wasPostedLate ? 'LATE' : ''}</span>{' '}
+                  {postedAtText}
+                </p>
+              ) : null}
+              {sweepsGrossText ? (
+                <p className="text-xs text-slate-500">
+                  <span className="font-semibold">Sweeps:</span> {golfer.sweepsGrossTotal}
+                </p>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
     </div>

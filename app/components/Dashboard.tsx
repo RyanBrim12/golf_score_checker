@@ -33,14 +33,8 @@ export default function Dashboard({ userRole = null }: DashboardProps) {
     [scoreboard.scores, search],
   );
   const sortedScores = useMemo(() => sortGolfers(filteredScores), [filteredScores]);
-  const matchedCount = useMemo(
-    () => countMatchedGolfers(filteredScores),
-    [filteredScores],
-  );
-  const scoreCount = useMemo(
-    () => countGolfersWithScores(filteredScores),
-    [filteredScores],
-  );
+  const matchedCount = useMemo(() => countMatchedGolfers(filteredScores), [filteredScores]);
+  const scoreCount = useMemo(() => countGolfersWithScores(filteredScores), [filteredScores]);
 
   const handleMatchSubmit = async (data: ManualMatchData | null) => {
     if (!modal.activeGolfer || !date) return;

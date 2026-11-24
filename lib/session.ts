@@ -34,7 +34,9 @@ function getSessionCookie(request: Request): string | null {
   }
 }
 
-export async function getAuthenticatedRoleFromCookie(value: string | null | undefined): Promise<AuthRole | null> {
+export async function getAuthenticatedRoleFromCookie(
+  value: string | null | undefined,
+): Promise<AuthRole | null> {
   const secret = process.env.AUTH_SESSION_SECRET;
   const sessionVersion = process.env.AUTH_SESSION_VERSION;
   if (!secret || !sessionVersion || !value) return null;
@@ -43,7 +45,11 @@ export async function getAuthenticatedRoleFromCookie(value: string | null | unde
   if (parts.length !== 4) return null;
 
   const [role, issuedAt, version, encodedSignature] = parts;
-  if ((role !== 'viewer' && role !== 'admin') || !/^\d+$/.test(issuedAt) || version !== sessionVersion) {
+  if (
+    (role !== 'viewer' && role !== 'admin') ||
+    !/^\d+$/.test(issuedAt) ||
+    version !== sessionVersion
+  ) {
     return null;
   }
 

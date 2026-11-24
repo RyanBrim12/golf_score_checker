@@ -8,7 +8,10 @@ const MAX_ENTRIES = 10_000;
 
 function removeExpiredEntries(now: number): void {
   for (const [entryKey, entry] of entries) {
-    if (entry.requests.length === 0 || now - entry.requests[entry.requests.length - 1] >= entry.windowMs) {
+    if (
+      entry.requests.length === 0 ||
+      now - entry.requests[entry.requests.length - 1] >= entry.windowMs
+    ) {
       entries.delete(entryKey);
     }
   }
@@ -37,9 +40,10 @@ export function consumeRateLimit(key: string, limit: number, windowMs: number): 
   entry.requests = entry.requests.filter((timestamp) => now - timestamp < windowMs);
 
   const oldestRequest = entry.requests[0];
-  const retryAfterSeconds = oldestRequest === undefined
-    ? 0
-    : Math.max(1, Math.ceil((oldestRequest + windowMs - now) / 1000));
+  const retryAfterSeconds =
+    oldestRequest === undefined
+      ? 0
+      : Math.max(1, Math.ceil((oldestRequest + windowMs - now) / 1000));
 
   if (entry.requests.length >= limit) {
     entries.set(key, entry);

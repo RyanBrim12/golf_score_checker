@@ -7,7 +7,11 @@ export type ClubCaddieSession = {
   cookie: string;
 };
 
-export async function createClubCaddieSession(clubId: string, username: string, password: string): Promise<ClubCaddieSession> {
+export async function createClubCaddieSession(
+  clubId: string,
+  username: string,
+  password: string,
+): Promise<ClubCaddieSession> {
   const cookieUrl = `${CLUB_CADDIE_BASE}/login?clubid=${encodeURIComponent(clubId)}`;
   const initialResponse = await fetch(cookieUrl, { method: 'GET' });
   const cookie = initialResponse.headers.get('set-cookie');
@@ -33,7 +37,11 @@ export async function createClubCaddieSession(clubId: string, username: string, 
   return { cookie };
 }
 
-export async function fetchTeeSheetHtml(session: ClubCaddieSession, sheetId: string, date: string): Promise<string> {
+export async function fetchTeeSheetHtml(
+  session: ClubCaddieSession,
+  sheetId: string,
+  date: string,
+): Promise<string> {
   const url = `${CLUB_CADDIE_BASE}/TeeSheet/view/${encodeURIComponent(sheetId)}/sheet?date=${encodeURIComponent(date)}`;
   const response = await fetch(url, { headers: { Cookie: session.cookie } });
 
@@ -47,7 +55,11 @@ export async function fetchTeeSheetHtml(session: ClubCaddieSession, sheetId: str
 export function parseGolfersFromTeeSheet(html: string): ClubCaddieGolfer[] {
   const parsed = parse(html).querySelectorAll('.Green');
   const golferTexts = Array.from(
-    new Set(parsed.map((element) => element.textContent?.trim()).filter((value): value is string => Boolean(value)))
+    new Set(
+      parsed
+        .map((element) => element.textContent?.trim())
+        .filter((value): value is string => Boolean(value)),
+    ),
   );
 
   return golferTexts.map((value) => {

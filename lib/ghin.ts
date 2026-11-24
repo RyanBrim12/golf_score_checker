@@ -32,54 +32,66 @@ async function searchGolfers(
       return golfer;
     }
   }
-  
+
   let golfers: GhinGolfer[], bestMatch;
-  
-  golfers = await ghin.golfers.search({last_name: lastName, state: state, club_id: clubId, first_name: firstName}).catch((error: unknown) => {
-    return parseGhinGolferError(error);
-  });
+
+  golfers = await ghin.golfers
+    .search({ last_name: lastName, state: state, club_id: clubId, first_name: firstName })
+    .catch((error: unknown) => {
+      return parseGhinGolferError(error);
+    });
   if (golfers.length === 1) {
     return golfers[0];
   }
 
-  golfers = await ghin.golfers.search({last_name: lastName, state: state, club_id: clubId}).catch((error: unknown) => {
-    return parseGhinGolferError(error);
-  });
+  golfers = await ghin.golfers
+    .search({ last_name: lastName, state: state, club_id: clubId })
+    .catch((error: unknown) => {
+      return parseGhinGolferError(error);
+    });
   bestMatch = findBestNameMatch(firstName, golfers, (golfer) => golfer.first_name);
   if (bestMatch) {
     return bestMatch;
   }
 
-  golfers = await ghin.golfers.search({last_name: lastName, state: state, first_name: firstName}).catch((error: unknown) => {
-    return parseGhinGolferError(error);
-  });
+  golfers = await ghin.golfers
+    .search({ last_name: lastName, state: state, first_name: firstName })
+    .catch((error: unknown) => {
+      return parseGhinGolferError(error);
+    });
   if (golfers.length === 1) {
     return golfers[0];
   }
 
-  golfers = await ghin.golfers.search({last_name: lastName, state: state}).catch((error: unknown) => {
-    return parseGhinGolferError(error);
-  });
+  golfers = await ghin.golfers
+    .search({ last_name: lastName, state: state })
+    .catch((error: unknown) => {
+      return parseGhinGolferError(error);
+    });
   bestMatch = findBestNameMatch(firstName, golfers, (golfer) => golfer.first_name);
   if (bestMatch) {
     return bestMatch;
   }
 
-  golfers = await ghin.golfers.search({last_name: lastName, country: country, first_name: firstName}).catch((error: unknown) => {
-    return parseGhinGolferError(error);
-  });
+  golfers = await ghin.golfers
+    .search({ last_name: lastName, country: country, first_name: firstName })
+    .catch((error: unknown) => {
+      return parseGhinGolferError(error);
+    });
   if (golfers.length === 1) {
     return golfers[0];
   }
 
-  golfers = await ghin.golfers.search({last_name: lastName, country: country}).catch((error: unknown) => {
-    return parseGhinGolferError(error);
-  });
+  golfers = await ghin.golfers
+    .search({ last_name: lastName, country: country })
+    .catch((error: unknown) => {
+      return parseGhinGolferError(error);
+    });
   bestMatch = findBestNameMatch(firstName, golfers, (golfer) => golfer.first_name);
   if (bestMatch) {
     return bestMatch;
   }
-  
+
   return null;
 }
 
@@ -122,22 +134,35 @@ async function fetchScoreForDate(
   date: string,
   courseId?: string,
 ): Promise<NonNullable<GhinScoreResponse['scores']>[number] | null> {
-  const scoreResponse = await ghin.golfers.getScores(ghinNumber, {
-    from_date_played: new Date(date),
-    to_date_played: new Date(date),
-  }).catch((error: unknown) => parseGhinScoreError(error));
+  const scoreResponse = await ghin.golfers
+    .getScores(ghinNumber, {
+      from_date_played: new Date(date),
+      to_date_played: new Date(date),
+    })
+    .catch((error: unknown) => parseGhinScoreError(error));
 
   const score = scoreResponse?.scores?.[0];
   if (!score || score.course_id !== courseId) return null;
   return score;
 }
 
-async function persistGolferMatch(golfer: ClubCaddieGolfer, matchedGolfer: GhinGolfer): Promise<void> {
+async function persistGolferMatch(
+  golfer: ClubCaddieGolfer,
+  matchedGolfer: GhinGolfer,
+): Promise<void> {
   // A concurrent request may have already created this match; other database errors still propagate.
   await createMatch({ ghin: matchedGolfer.ghin, name: golfer.name });
 }
 
-function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, score?: number | null, message?: string, postedAt?: string | Date | null, scoreType?: string | null, used?: boolean | null): GolferScore {  
+function formatScoreResult(
+  golfer: ClubCaddieGolfer,
+  bestMatch?: GhinGolfer,
+  score?: number | null,
+  message?: string,
+  postedAt?: string | Date | null,
+  scoreType?: string | null,
+  used?: boolean | null,
+): GolferScore {
   if (!bestMatch) {
     return {
       clubCaddieName: golfer.clubCaddieName,
@@ -177,7 +202,17 @@ function formatScoreResult(golfer: ClubCaddieGolfer, bestMatch?: GhinGolfer, sco
   };
 }
 
-export async function fetchGolferScores(date: string, golfers: ClubCaddieGolfer[], username: string, password: string, state?: string, clubId?: string, country?: string, courseId?: string, requestId?: string): Promise<GolferScore[]> {
+export async function fetchGolferScores(
+  date: string,
+  golfers: ClubCaddieGolfer[],
+  username: string,
+  password: string,
+  state?: string,
+  clubId?: string,
+  country?: string,
+  courseId?: string,
+  requestId?: string,
+): Promise<GolferScore[]> {
   if (golfers.length === 0) return [];
 
   const ghin = createGhinClient(username, password);
@@ -255,7 +290,18 @@ export function parseGhinScoreError(error: unknown): GhinScoreResponse | undefin
   return undefined;
 }
 
-export async function fetchScoreByGhin(ghin: number, date: string, username: string, password: string, courseId?: string): Promise<{ score: number; postedAt: string | null, scoreType: string | null, used: boolean | null } | null> {
+export async function fetchScoreByGhin(
+  ghin: number,
+  date: string,
+  username: string,
+  password: string,
+  courseId?: string,
+): Promise<{
+  score: number;
+  postedAt: string | null;
+  scoreType: string | null;
+  used: boolean | null;
+} | null> {
   const ghinClient = createGhinClient(username, password);
   const scoreResult = await fetchScoreForDate(ghinClient, ghin, date, courseId);
   if (!scoreResult) return null;
@@ -265,9 +311,10 @@ export async function fetchScoreByGhin(ghin: number, date: string, username: str
 
   return {
     score,
-    postedAt: scoreResult.posted_at instanceof Date
-      ? scoreResult.posted_at.toISOString()
-      : scoreResult.posted_at ?? null,
+    postedAt:
+      scoreResult.posted_at instanceof Date
+        ? scoreResult.posted_at.toISOString()
+        : (scoreResult.posted_at ?? null),
     scoreType: scoreResult.score_type_display_full ?? null,
     used: normalizeUsedFlag(scoreResult.used),
   };

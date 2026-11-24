@@ -13,7 +13,11 @@ const PAGE_SIZE = 5;
 const buttonClass =
   'rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40';
 
-export default function SweepsMatchPanel({ golfers, initialSearch, onSelect }: SweepsMatchPanelProps) {
+export default function SweepsMatchPanel({
+  golfers,
+  initialSearch,
+  onSelect,
+}: SweepsMatchPanelProps) {
   const [search, setSearch] = useState(initialSearch);
   const [page, setPage] = useState(0);
 
@@ -23,7 +27,10 @@ export default function SweepsMatchPanel({ golfers, initialSearch, onSelect }: S
   }, [initialSearch]);
 
   const filteredGolfers = useMemo(
-    () => golfers.filter((golfer) => golfer.playerName.toLowerCase().includes(search.trim().toLowerCase())),
+    () =>
+      golfers.filter((golfer) =>
+        golfer.playerName.toLowerCase().includes(search.trim().toLowerCase()),
+      ),
     [golfers, search],
   );
   const totalPages = Math.ceil(filteredGolfers.length / PAGE_SIZE);
@@ -62,7 +69,8 @@ export default function SweepsMatchPanel({ golfers, initialSearch, onSelect }: S
               onClick={() => onSelect(golfer.playerId)}
               className="w-full rounded border border-slate-200 bg-white px-3 py-2.5 text-left hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
             >
-              {golfer.playerName}{golfer.handicap !== null ? ` (Handicap: ${golfer.handicap})` : ''}
+              {golfer.playerName}
+              {golfer.handicap !== null ? ` (Handicap: ${golfer.handicap})` : ''}
             </button>
           </li>
         ))}
@@ -72,10 +80,17 @@ export default function SweepsMatchPanel({ golfers, initialSearch, onSelect }: S
       </ul>
       {totalPages > 1 ? (
         <div className="flex items-center justify-between gap-2 pt-1">
-          <button type="button" disabled={page === 0} onClick={() => setPage((current) => current - 1)} className={buttonClass}>
+          <button
+            type="button"
+            disabled={page === 0}
+            onClick={() => setPage((current) => current - 1)}
+            className={buttonClass}
+          >
             Prev
           </button>
-          <span className="text-xs text-slate-500">{page + 1}/{totalPages}</span>
+          <span className="text-xs text-slate-500">
+            {page + 1}/{totalPages}
+          </span>
           <button
             type="button"
             disabled={page >= totalPages - 1}

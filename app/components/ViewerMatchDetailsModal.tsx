@@ -32,7 +32,9 @@ export default function ViewerMatchDetailsModal({
             <h3 className="text-sm font-semibold text-slate-900">GHIN</h3>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Matched player</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Matched player
+                </p>
                 <p className="mt-1 text-sm text-slate-800">
                   {golfer.matchedFirstName && golfer.matchedLastName
                     ? `${golfer.matchedFirstName} ${golfer.matchedLastName}`
@@ -57,11 +59,17 @@ export default function ViewerMatchDetailsModal({
             <h3 className="text-sm font-semibold text-slate-900">Sweeps</h3>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Matched player</p>
-                <p className="mt-1 text-sm text-slate-800">{golfer.sweepsPlayerName || 'No match assigned'}</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Matched player
+                </p>
+                <p className="mt-1 text-sm text-slate-800">
+                  {golfer.sweepsPlayerName || 'No match assigned'}
+                </p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Player ID</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Player ID
+                </p>
                 <p className="mt-1 text-sm text-slate-800">{golfer.sweepsPlayerId ?? '—'}</p>
               </div>
             </div>

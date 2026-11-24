@@ -15,7 +15,11 @@ function getUtcDateString(date: Date): string {
  * @param maxLength - Maximum allowed length
  * @returns True if valid, false otherwise
  */
-export function validateStringInput(value: unknown, minLength: number = 1, maxLength: number = MAX_STRING_LENGTH): value is string {
+export function validateStringInput(
+  value: unknown,
+  minLength: number = 1,
+  maxLength: number = MAX_STRING_LENGTH,
+): value is string {
   if (typeof value !== 'string') return false;
   const length = value.trim().length;
   return length >= minLength && length <= maxLength;
@@ -37,11 +41,9 @@ export function isValidScoreDate(value: unknown): value is string {
   if (Number.isNaN(parsed.getTime()) || getUtcDateString(parsed) !== value) return false;
 
   const today = new Date();
-  const earliest = new Date(Date.UTC(
-    today.getUTCFullYear() - DATE_LOOKBACK_YEARS,
-    today.getUTCMonth(),
-    today.getUTCDate(),
-  ));
+  const earliest = new Date(
+    Date.UTC(today.getUTCFullYear() - DATE_LOOKBACK_YEARS, today.getUTCMonth(), today.getUTCDate()),
+  );
 
   return parsed >= earliest && parsed <= new Date(`${getUtcDateString(today)}T23:59:59.999Z`);
 }

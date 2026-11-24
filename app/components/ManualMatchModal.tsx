@@ -84,7 +84,7 @@ export function ManualMatchModal({
             {onSweepsSubmit ? (
               <button
                 type="button"
-                onClick={() => setMode((current) => current === 'ghin' ? 'sweeps' : 'ghin')}
+                onClick={() => setMode((current) => (current === 'ghin' ? 'sweeps' : 'ghin'))}
                 className="shrink-0 rounded border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
               >
                 {mode === 'ghin' ? '→ Sweeps' : 'GHIN ←'}
@@ -95,11 +95,7 @@ export function ManualMatchModal({
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4 sm:space-y-4 sm:p-6">
           <div className={mode === 'ghin' ? 'space-y-3 sm:space-y-4' : 'hidden'}>
-            <GhinMatchPanel
-              search={ghinSearch}
-              isLoading={isLoading}
-              onSelect={handleGhinSelect}
-            />
+            <GhinMatchPanel search={ghinSearch} isLoading={isLoading} onSelect={handleGhinSelect} />
           </div>
           <div className={mode === 'sweeps' ? 'space-y-3 sm:space-y-4' : 'hidden'}>
             <SweepsMatchPanel

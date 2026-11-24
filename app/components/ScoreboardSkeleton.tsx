@@ -1,7 +1,6 @@
 export default function ScoreboardSkeleton() {
   return (
     <div className="mt-6 space-y-4 animate-fade-in">
-
       {/* Summary and Search Row Skeleton */}
       <div className="mb-4 flex flex-col items-center justify-between gap-2 sm:flex-row sm:items-center">
         <div className="flex items-center gap-2 text-sm text-slate-400">

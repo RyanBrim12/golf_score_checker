@@ -37,14 +37,15 @@ function getSessionVersion(): string | null {
 
 async function verifyPassword(password: string, encodedHash: string): Promise<boolean> {
   const [algorithm, cost, blockSize, parallelization, salt, expectedHash] = encodedHash.split('$');
-  if (algorithm !== 'scrypt' || !cost || !blockSize || !parallelization || !salt || !expectedHash) return false;
+  if (algorithm !== 'scrypt' || !cost || !blockSize || !parallelization || !salt || !expectedHash)
+    return false;
 
   try {
-    const derivedKey = await deriveKey(password, Buffer.from(salt, 'base64url'), {
+    const derivedKey = (await deriveKey(password, Buffer.from(salt, 'base64url'), {
       N: Number(cost),
       r: Number(blockSize),
       p: Number(parallelization),
-    }) as Buffer;
+    })) as Buffer;
     const expectedKey = Buffer.from(expectedHash, 'base64url');
     return expectedKey.length === derivedKey.length && timingSafeEqual(derivedKey, expectedKey);
   } catch {
@@ -84,22 +85,41 @@ export function clearSessionCookie() {
 
 function configuredCredentials() {
   const credentials = [
-    { role: 'viewer' as const, username: process.env.AUTH_VIEWER_USERNAME, passwordHash: process.env.AUTH_VIEWER_PASSWORD_HASH },
-    { role: 'admin' as const, username: process.env.AUTH_ADMIN_USERNAME, passwordHash: process.env.AUTH_ADMIN_PASSWORD_HASH },
+    {
+      role: 'viewer' as const,
+      username: process.env.AUTH_VIEWER_USERNAME,
+      passwordHash: process.env.AUTH_VIEWER_PASSWORD_HASH,
+    },
+    {
+      role: 'admin' as const,
+      username: process.env.AUTH_ADMIN_USERNAME,
+      passwordHash: process.env.AUTH_ADMIN_PASSWORD_HASH,
+    },
   ];
 
-  if (credentials.some(({ username, passwordHash }) => !username || !passwordHash || !getSessionSecret() || !getSessionVersion())) {
+  if (
+    credentials.some(
+      ({ username, passwordHash }) =>
+        !username || !passwordHash || !getSessionSecret() || !getSessionVersion(),
+    )
+  ) {
     throw new Error('Authentication credentials are not configured.');
   }
 
   return credentials;
 }
 
-export async function authenticateCredentials(username: string, password: string): Promise<AuthRole | null> {
+export async function authenticateCredentials(
+  username: string,
+  password: string,
+): Promise<AuthRole | null> {
   try {
     const credentials = configuredCredentials();
     for (const credential of credentials) {
-      if (safeEqual(username, credential.username!) && await verifyPassword(password, credential.passwordHash!)) {
+      if (
+        safeEqual(username, credential.username!) &&
+        (await verifyPassword(password, credential.passwordHash!))
+      ) {
         return credential.role;
       }
     }
@@ -109,7 +129,10 @@ export async function authenticateCredentials(username: string, password: string
   }
 }
 
-export async function authenticate(request: Request, requiredRole: AuthRole = 'viewer'): Promise<NextResponse | null> {
+export async function authenticate(
+  request: Request,
+  requiredRole: AuthRole = 'viewer',
+): Promise<NextResponse | null> {
   const role = await getAuthenticatedRole(request);
   if (!role || (requiredRole === 'admin' && role !== 'admin')) {
     return NextResponse.json({ message: 'Authentication required.' }, { status: 401 });

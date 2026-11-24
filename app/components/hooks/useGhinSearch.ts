@@ -120,28 +120,38 @@ export function useGhinSearch({ open, enabled, initialValues }: UseGhinSearchOpt
 
       void (async () => {
         try {
-          const golfers = await searchGhin({
-            ...search,
-            page: 1,
-            perPage: REMOTE_PAGE_SIZE,
-          }, controller.signal);
+          const golfers = await searchGhin(
+            {
+              ...search,
+              page: 1,
+              perPage: REMOTE_PAGE_SIZE,
+            },
+            controller.signal,
+          );
 
           if (requestId !== requestIdRef.current) return;
           setResults(golfers);
 
           if (golfers.length === REMOTE_PAGE_SIZE) {
             try {
-              const lookahead = await searchGhin({
-                ...search,
-                page: REMOTE_PAGE_SIZE + 1,
-                perPage: 1,
-              }, controller.signal);
+              const lookahead = await searchGhin(
+                {
+                  ...search,
+                  page: REMOTE_PAGE_SIZE + 1,
+                  perPage: 1,
+                },
+                controller.signal,
+              );
               if (requestId === requestIdRef.current) {
                 setHasMoreRemotePages(lookahead.length > 0);
               }
             } catch (lookaheadError) {
               if (controller.signal.aborted || requestId !== requestIdRef.current) return;
-              setError(lookaheadError instanceof Error ? lookaheadError.message : 'Unknown error occurred.');
+              setError(
+                lookaheadError instanceof Error
+                  ? lookaheadError.message
+                  : 'Unknown error occurred.',
+              );
             }
           }
         } catch (searchError) {
@@ -179,11 +189,14 @@ export function useGhinSearch({ open, enabled, initialValues }: UseGhinSearchOpt
     setIsFetchingMore(true);
 
     try {
-      const golfers = await searchGhin({
-        ...search,
-        page: nextRemotePage,
-        perPage: REMOTE_PAGE_SIZE,
-      }, controller.signal);
+      const golfers = await searchGhin(
+        {
+          ...search,
+          page: nextRemotePage,
+          perPage: REMOTE_PAGE_SIZE,
+        },
+        controller.signal,
+      );
 
       if (requestId !== requestIdRef.current) return [];
       if (golfers.length === 0) {
@@ -195,11 +208,14 @@ export function useGhinSearch({ open, enabled, initialValues }: UseGhinSearchOpt
       setRemotePage(nextRemotePage);
 
       if (golfers.length === REMOTE_PAGE_SIZE) {
-        const lookahead = await searchGhin({
-          ...search,
-          page: nextRemotePage * REMOTE_PAGE_SIZE + 1,
-          perPage: 1,
-        }, controller.signal);
+        const lookahead = await searchGhin(
+          {
+            ...search,
+            page: nextRemotePage * REMOTE_PAGE_SIZE + 1,
+            perPage: 1,
+          },
+          controller.signal,
+        );
         if (requestId === requestIdRef.current) {
           setHasMoreRemotePages(lookahead.length > 0);
         }
@@ -251,7 +267,10 @@ export function useGhinSearch({ open, enabled, initialValues }: UseGhinSearchOpt
     club,
     setClub,
     results,
-    visibleResults: results.slice(currentPage * RESULTS_PER_PAGE, (currentPage + 1) * RESULTS_PER_PAGE),
+    visibleResults: results.slice(
+      currentPage * RESULTS_PER_PAGE,
+      (currentPage + 1) * RESULTS_PER_PAGE,
+    ),
     isSearching,
     isFetchingMore,
     error,

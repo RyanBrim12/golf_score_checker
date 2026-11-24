@@ -3,7 +3,8 @@ const nextConfig = {
   async headers() {
     const contentSecurityPolicy = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'" + (process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''),
+      "script-src 'self' 'unsafe-inline'" +
+        (process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''),
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self' data:",
@@ -23,7 +24,10 @@ const nextConfig = {
     ];
 
     if (process.env.NODE_ENV === 'production') {
-      securityHeaders.push({ key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' });
+      securityHeaders.push({
+        key: 'Strict-Transport-Security',
+        value: 'max-age=31536000; includeSubDomains',
+      });
     }
 
     return [{ source: '/(.*)', headers: securityHeaders }];

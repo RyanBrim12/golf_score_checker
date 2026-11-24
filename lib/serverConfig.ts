@@ -39,7 +39,11 @@ export type GhinScoringConfig = {
 };
 
 export function getGhinScoringConfig(): GhinScoringConfig {
-  const required = getRequiredEnvValues(['GHIN_USERNAME', 'GHIN_PASSWORD', 'GHIN_COURSE_ID'] as const);
+  const required = getRequiredEnvValues([
+    'GHIN_USERNAME',
+    'GHIN_PASSWORD',
+    'GHIN_COURSE_ID',
+  ] as const);
   return {
     username: required.GHIN_USERNAME,
     password: required.GHIN_PASSWORD,

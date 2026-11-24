@@ -20,7 +20,9 @@ export default function GhinMatchPanel({ search, isLoading, onSelect }: GhinMatc
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-5">
         <div className="flex-1">
-          <label htmlFor="firstName" className="mb-1 block text-sm font-medium text-gray-700">First Name</label>
+          <label htmlFor="firstName" className="mb-1 block text-sm font-medium text-gray-700">
+            First Name
+          </label>
           <input
             id="firstName"
             type="text"
@@ -32,7 +34,9 @@ export default function GhinMatchPanel({ search, isLoading, onSelect }: GhinMatc
           />
         </div>
         <div className="flex-1">
-          <label htmlFor="lastName" className="mb-1 block text-sm font-medium text-gray-700">Last Name</label>
+          <label htmlFor="lastName" className="mb-1 block text-sm font-medium text-gray-700">
+            Last Name
+          </label>
           <input
             id="lastName"
             type="text"
@@ -46,7 +50,9 @@ export default function GhinMatchPanel({ search, isLoading, onSelect }: GhinMatc
       </div>
 
       <div>
-        <label htmlFor="ghinNumber" className="mb-1 block text-sm font-medium text-gray-700">GHIN Number</label>
+        <label htmlFor="ghinNumber" className="mb-1 block text-sm font-medium text-gray-700">
+          GHIN Number
+        </label>
         <input
           id="ghinNumber"
           type="number"
@@ -60,7 +66,9 @@ export default function GhinMatchPanel({ search, isLoading, onSelect }: GhinMatc
 
       <div className="flex gap-3 sm:gap-5">
         <div className="w-16 shrink-0 sm:w-20">
-          <label htmlFor="state" className="mb-1 block text-sm font-medium text-gray-700">State</label>
+          <label htmlFor="state" className="mb-1 block text-sm font-medium text-gray-700">
+            State
+          </label>
           <input
             id="state"
             type="text"
@@ -73,7 +81,9 @@ export default function GhinMatchPanel({ search, isLoading, onSelect }: GhinMatc
           />
         </div>
         <div className="min-w-0 flex-1">
-          <label htmlFor="club" className="mb-1 block text-sm font-medium text-gray-700">Club</label>
+          <label htmlFor="club" className="mb-1 block text-sm font-medium text-gray-700">
+            Club
+          </label>
           <input
             id="club"
             type="text"
@@ -87,7 +97,9 @@ export default function GhinMatchPanel({ search, isLoading, onSelect }: GhinMatc
       </div>
 
       {search.error ? (
-        <p className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{search.error}</p>
+        <p className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+          {search.error}
+        </p>
       ) : null}
 
       <div className="space-y-2">
@@ -102,21 +114,27 @@ export default function GhinMatchPanel({ search, isLoading, onSelect }: GhinMatc
               No Match
             </button>
           </li>
-          {!search.isSearching
-            ? search.visibleResults.map((golfer, index) => (
-                <li key={`${golfer.ghin}-${index}`}>
-                  <button
-                    type="button"
-                    onClick={() => onSelect(golfer)}
-                    className="w-full rounded border border-slate-200 bg-white px-3 py-2.5 text-left transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:bg-blue-50 sm:py-2"
-                  >
-                    <span className="block truncate">{golfer.first_name} {golfer.last_name} ({golfer.ghin})</span>
-                    <span className="block truncate text-xs text-slate-400 sm:hidden">{golfer.club_name}</span>
-                    <span className="hidden sm:inline"> {golfer.club_name}</span>
-                  </button>
-                </li>
-              ))
-            : <li className="text-sm text-slate-500">Searching...</li>}
+          {!search.isSearching ? (
+            search.visibleResults.map((golfer, index) => (
+              <li key={`${golfer.ghin}-${index}`}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(golfer)}
+                  className="w-full rounded border border-slate-200 bg-white px-3 py-2.5 text-left transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:bg-blue-50 sm:py-2"
+                >
+                  <span className="block truncate">
+                    {golfer.first_name} {golfer.last_name} ({golfer.ghin})
+                  </span>
+                  <span className="block truncate text-xs text-slate-400 sm:hidden">
+                    {golfer.club_name}
+                  </span>
+                  <span className="hidden sm:inline"> {golfer.club_name}</span>
+                </button>
+              </li>
+            ))
+          ) : (
+            <li className="text-sm text-slate-500">Searching...</li>
+          )}
         </ul>
 
         {search.showPagination ? (
@@ -138,7 +156,8 @@ export default function GhinMatchPanel({ search, isLoading, onSelect }: GhinMatc
               ← Prev
             </button>
             <span className="shrink-0 text-xs text-slate-500">
-              {search.currentPage + 1}/{search.totalPages}{search.hasMoreRemotePages ? '+' : ''}
+              {search.currentPage + 1}/{search.totalPages}
+              {search.hasMoreRemotePages ? '+' : ''}
             </span>
             <button
               type="button"
@@ -155,8 +174,19 @@ export default function GhinMatchPanel({ search, isLoading, onSelect }: GhinMatc
               {search.isFetchingMore ? (
                 <span className="inline-flex items-center gap-1">
                   <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
                   </svg>
                   <span className="hidden sm:inline">Loading</span>
                 </span>

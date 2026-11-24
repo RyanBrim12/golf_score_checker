@@ -39,8 +39,12 @@ function requireRecord(value: unknown, endpoint: string): Record<string, unknown
 }
 
 function parsePage(value: unknown, endpoint: string): SweepsPage {
-  if (!isRecord(value) || !Array.isArray(value.data) || !isRecord(value.pagination) ||
-      typeof value.pagination.hasMore !== 'boolean') {
+  if (
+    !isRecord(value) ||
+    !Array.isArray(value.data) ||
+    !isRecord(value.pagination) ||
+    typeof value.pagination.hasMore !== 'boolean'
+  ) {
     throw new Error(`Sweeps ${endpoint} response has an invalid page format.`);
   }
 
@@ -81,11 +85,15 @@ function normalizeSweepsPlayer(player: Record<string, unknown>): SweepsPlayer | 
   if (typeof player.playerId !== 'number' || typeof player.playerName !== 'string') return null;
 
   return {
-    membershipId: typeof player.membershipId === 'string' || typeof player.membershipId === 'number' ? player.membershipId : null,
+    membershipId:
+      typeof player.membershipId === 'string' || typeof player.membershipId === 'number'
+        ? player.membershipId
+        : null,
     playerId: player.playerId,
     playerName: player.playerName,
     handicap: typeof player.handicap === 'number' ? player.handicap : null,
-    handicapCalculated: typeof player.handicapCalculated === 'number' ? player.handicapCalculated : null,
+    handicapCalculated:
+      typeof player.handicapCalculated === 'number' ? player.handicapCalculated : null,
     handicapStatus: typeof player.handicapStatus === 'string' ? player.handicapStatus : null,
     role: typeof player.role === 'string' ? player.role : null,
     isActive: typeof player.isActive === 'boolean' ? player.isActive : null,

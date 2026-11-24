@@ -49,6 +49,6 @@ export function updateGolferByName(
   update: (golfer: GolferScore) => GolferScore,
 ): GolferScore[] | null {
   return golfers
-    ? golfers.map((golfer) => golfer.clubCaddieName === targetName ? update(golfer) : golfer)
+    ? golfers.map((golfer) => (golfer.clubCaddieName === targetName ? update(golfer) : golfer))
     : null;
 }

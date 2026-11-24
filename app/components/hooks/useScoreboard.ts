@@ -46,31 +46,39 @@ export function useScoreboard() {
       await saveGhinMatch(targetName, parsedGhin);
 
       if (!parsedGhin) {
-        setScores((current) => updateGolferByName(current, targetName, (golfer) => ({
-          ...golfer,
-          matchedFirstName: undefined,
-          matchedLastName: undefined,
-          ghinNumber: undefined,
-          status: 'unmatched',
-          score: undefined,
-        })));
+        setScores((current) =>
+          updateGolferByName(current, targetName, (golfer) => ({
+            ...golfer,
+            matchedFirstName: undefined,
+            matchedLastName: undefined,
+            ghinNumber: undefined,
+            status: 'unmatched',
+            score: undefined,
+          })),
+        );
         return;
       }
 
       const refreshed = await refreshGhinScore(parsedGhin, date);
-      setScores((current) => updateGolferByName(current, targetName, (golfer) => ({
-        ...golfer,
-        matchedFirstName: data?.firstName,
-        matchedLastName: data?.lastName,
-        ghinNumber: parsedGhin,
-        status: refreshed.score !== null ? 'matched' : 'no-score',
-        score: refreshed.score,
-        used: refreshed.used,
-        postedAt: refreshed.postedAt,
-        scoreType: refreshed.scoreType,
-      })));
+      setScores((current) =>
+        updateGolferByName(current, targetName, (golfer) => ({
+          ...golfer,
+          matchedFirstName: data?.firstName,
+          matchedLastName: data?.lastName,
+          ghinNumber: parsedGhin,
+          status: refreshed.score !== null ? 'matched' : 'no-score',
+          score: refreshed.score,
+          used: refreshed.used,
+          postedAt: refreshed.postedAt,
+          scoreType: refreshed.scoreType,
+        })),
+      );
     } catch (matchError) {
-      setError(matchError instanceof Error ? matchError.message : 'Unknown error occurred while refreshing scores.');
+      setError(
+        matchError instanceof Error
+          ? matchError.message
+          : 'Unknown error occurred while refreshing scores.',
+      );
     } finally {
       setUpdatingGolferName(null);
     }
@@ -82,16 +90,26 @@ export function useScoreboard() {
     try {
       const match = await saveSweepsMatch(targetName, sweepsId, date);
       const selectedSweepsPlayer = sweepsGolfers.find((player) => player.playerId === sweepsId);
-      setScores((current) => updateGolferByName(current, targetName, (golfer) => ({
-        ...golfer,
-        sweepsPlayerId: sweepsId === null ? null : match?.sweepsPlayerId ?? sweepsId,
-        sweepsPlayerName: sweepsId === null
-          ? null
-          : match?.sweepsPlayerName ?? selectedSweepsPlayer?.playerName ?? golfer.sweepsPlayerName ?? null,
-        sweepsGrossTotal: sweepsId === null ? undefined : match?.sweepsGrossTotal ?? undefined,
-      })));
+      setScores((current) =>
+        updateGolferByName(current, targetName, (golfer) => ({
+          ...golfer,
+          sweepsPlayerId: sweepsId === null ? null : (match?.sweepsPlayerId ?? sweepsId),
+          sweepsPlayerName:
+            sweepsId === null
+              ? null
+              : (match?.sweepsPlayerName ??
+                selectedSweepsPlayer?.playerName ??
+                golfer.sweepsPlayerName ??
+                null),
+          sweepsGrossTotal: sweepsId === null ? undefined : (match?.sweepsGrossTotal ?? undefined),
+        })),
+      );
     } catch (matchError) {
-      setError(matchError instanceof Error ? matchError.message : 'Unknown error occurred while saving sweeps match.');
+      setError(
+        matchError instanceof Error
+          ? matchError.message
+          : 'Unknown error occurred while saving sweeps match.',
+      );
     } finally {
       setUpdatingGolferName(null);
     }

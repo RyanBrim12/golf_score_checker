@@ -8,9 +8,11 @@ function getClientAddress(request: NextRequest): string | null {
   const cfIp = request.headers.get('cf-connecting-ip');
   const vercelIp = request.headers.get('x-vercel-forwarded-for')?.split(',')[0];
 
-  return [forwardedFor, realIp, cfIp, vercelIp]
-    .map((address) => address?.trim())
-    .find((address): address is string => Boolean(address)) ?? null;
+  return (
+    [forwardedFor, realIp, cfIp, vercelIp]
+      .map((address) => address?.trim())
+      .find((address): address is string => Boolean(address)) ?? null
+  );
 }
 
 function rateLimit(request: NextRequest): NextResponse | null {
@@ -22,11 +24,14 @@ function rateLimit(request: NextRequest): NextResponse | null {
   const limit = isSignIn ? 10 : 120;
   const windowMs = isSignIn ? 15 * 60 * 1000 : 60 * 1000;
   const bucket = isSignIn ? 'signin' : 'api';
-  const clientAddress = getClientAddress(request)
-    ?? (process.env.NODE_ENV !== 'production' ? 'local-development' : null);
+  const clientAddress =
+    getClientAddress(request) ??
+    (process.env.NODE_ENV !== 'production' ? 'local-development' : null);
 
   if (!clientAddress) {
-    console.error('Rate limiting unavailable: client IP address is missing. Configure proxy forwarding headers.');
+    console.error(
+      'Rate limiting unavailable: client IP address is missing. Configure proxy forwarding headers.',
+    );
     return NextResponse.json(
       { message: 'Rate limiting is unavailable. Check the server proxy configuration.' },
       { status: 503 },
@@ -36,7 +41,10 @@ function rateLimit(request: NextRequest): NextResponse | null {
   const result = consumeRateLimit(`${clientAddress}:${bucket}`, limit, windowMs);
   if (result.allowed) return null;
 
-  const response = NextResponse.json({ message: 'Too many requests. Please try again later.' }, { status: 429 });
+  const response = NextResponse.json(
+    { message: 'Too many requests. Please try again later.' },
+    { status: 429 },
+  );
   response.headers.set('Retry-After', String(result.retryAfterSeconds));
   response.headers.set('X-RateLimit-Limit', String(limit));
   response.headers.set('X-RateLimit-Remaining', String(result.remaining));
@@ -56,7 +64,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!await getAuthenticatedRole(request)) {
+  if (!(await getAuthenticatedRole(request))) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ message: 'Authentication required.' }, { status: 401 });
     }

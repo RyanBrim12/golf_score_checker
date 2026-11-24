@@ -5,18 +5,23 @@ import { createRequestId, internalServerError, readJsonObject } from '@/lib/requ
 import { validateStringInput } from '@/lib/validation';
 
 const logger = {
-  info: (message: string, data?: Record<string, unknown>) => console.log(JSON.stringify({ level: 'info', message, ...data })),
-  error: (message: string, data?: Record<string, unknown>) => console.error(JSON.stringify({ level: 'error', message, ...data })),
+  info: (message: string, data?: Record<string, unknown>) =>
+    console.log(JSON.stringify({ level: 'info', message, ...data })),
+  error: (message: string, data?: Record<string, unknown>) =>
+    console.error(JSON.stringify({ level: 'error', message, ...data })),
 };
 
 export async function POST(request: Request) {
   const requestId = createRequestId();
-  
+
   try {
     // CSRF Protection
     const csrfError = requireSameOrigin(request);
     if (csrfError) {
-      logger.info('CSRF validation failed', { requestId, ip: request.headers.get('x-forwarded-for') });
+      logger.info('CSRF validation failed', {
+        requestId,
+        ip: request.headers.get('x-forwarded-for'),
+      });
       return csrfError;
     }
 

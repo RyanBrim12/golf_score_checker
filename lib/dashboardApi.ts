@@ -39,7 +39,10 @@ export type SweepsMatchResult = {
 };
 
 class ApiResponseError extends Error {
-  constructor(message: string, readonly status: number) {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
     super(message);
     this.name = 'ApiResponseError';
   }
@@ -65,7 +68,8 @@ function isGolferScore(value: unknown): value is GolferScore {
   if (!isRecord(value)) return false;
   const validStatuses = ['matched', 'unmatched', 'no-score', 'error'];
 
-  return typeof value.clubCaddieName === 'string' &&
+  return (
+    typeof value.clubCaddieName === 'string' &&
     typeof value.firstName === 'string' &&
     typeof value.lastName === 'string' &&
     validStatuses.includes(String(value.status)) &&
@@ -79,7 +83,8 @@ function isGolferScore(value: unknown): value is GolferScore {
     isOptionalNullableNumber(value.sweepsGrossTotal) &&
     isOptionalNullableNumber(value.sweepsPlayerId) &&
     isOptionalNullableString(value.sweepsPlayerName) &&
-    isOptionalString(value.message);
+    isOptionalString(value.message)
+  );
 }
 
 function parseGhinSearchResponse(payload: unknown): GhinGolfer[] {
@@ -88,11 +93,15 @@ function parseGhinSearchResponse(payload: unknown): GhinGolfer[] {
   }
 
   return payload.golfers.map((golfer): GhinGolfer => {
-    if (!isRecord(golfer) ||
-        typeof golfer.first_name !== 'string' ||
-        typeof golfer.last_name !== 'string' ||
-        typeof golfer.ghin !== 'number' ||
-        (golfer.club_name !== undefined && golfer.club_name !== null && typeof golfer.club_name !== 'string')) {
+    if (
+      !isRecord(golfer) ||
+      typeof golfer.first_name !== 'string' ||
+      typeof golfer.last_name !== 'string' ||
+      typeof golfer.ghin !== 'number' ||
+      (golfer.club_name !== undefined &&
+        golfer.club_name !== null &&
+        typeof golfer.club_name !== 'string')
+    ) {
       throw new Error('The GHIN search response contains an invalid golfer.');
     }
 
@@ -106,18 +115,21 @@ function parseGhinSearchResponse(payload: unknown): GhinGolfer[] {
 }
 
 function parseScoreboardResponse(payload: unknown): ScoreboardResponse {
-  if (!isRecord(payload) ||
-      !Array.isArray(payload.scores) ||
-      !payload.scores.every(isGolferScore) ||
-      !Array.isArray(payload.sweepsGolfers) ||
-      !payload.sweepsGolfers.every((golfer) =>
+  if (
+    !isRecord(payload) ||
+    !Array.isArray(payload.scores) ||
+    !payload.scores.every(isGolferScore) ||
+    !Array.isArray(payload.sweepsGolfers) ||
+    !payload.sweepsGolfers.every(
+      (golfer) =>
         isRecord(golfer) &&
         typeof golfer.playerId === 'number' &&
         typeof golfer.playerName === 'string' &&
-        (golfer.handicap === null || typeof golfer.handicap === 'number')
-      ) ||
-      typeof payload.state !== 'string' ||
-      (payload.club !== undefined && payload.club !== null && typeof payload.club !== 'string')) {
+        (golfer.handicap === null || typeof golfer.handicap === 'number'),
+    ) ||
+    typeof payload.state !== 'string' ||
+    (payload.club !== undefined && payload.club !== null && typeof payload.club !== 'string')
+  ) {
     throw new Error('The scoreboard response has an invalid format.');
   }
 
@@ -137,9 +149,8 @@ async function readError(response: Response, fallback: string): Promise<never> {
     payload = null;
   }
 
-  const message = isRecord(payload) && typeof payload.message === 'string'
-    ? payload.message
-    : fallback;
+  const message =
+    isRecord(payload) && typeof payload.message === 'string' ? payload.message : fallback;
   throw new ApiResponseError(message || fallback, response.status);
 }
 
@@ -182,21 +193,28 @@ async function fetchWithNotFoundFallback(
   return fetchApiResponse(url, init('POST'), fallback);
 }
 
-export async function searchGhin(params: GhinSearchParams, signal: AbortSignal): Promise<GhinGolfer[]> {
-  const response = await fetchApiResponse('/api/ghin', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    signal,
-    body: JSON.stringify({
-      firstName: params.firstName,
-      lastName: params.lastName,
-      ghinNumber: params.ghinNumber,
-      state: params.state,
-      club: params.club,
-      page: params.page,
-      per_page: params.perPage,
-    }),
-  }, 'Failed to fetch GHIN golfers.');
+export async function searchGhin(
+  params: GhinSearchParams,
+  signal: AbortSignal,
+): Promise<GhinGolfer[]> {
+  const response = await fetchApiResponse(
+    '/api/ghin',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal,
+      body: JSON.stringify({
+        firstName: params.firstName,
+        lastName: params.lastName,
+        ghinNumber: params.ghinNumber,
+        state: params.state,
+        club: params.club,
+        page: params.page,
+        per_page: params.perPage,
+      }),
+    },
+    'Failed to fetch GHIN golfers.',
+  );
 
   return parseGhinSearchResponse(
     await readJson(response, 'The GHIN search response was not valid JSON.'),
@@ -242,7 +260,11 @@ export async function saveSweepsMatch(
   date: string,
 ): Promise<SweepsMatchResult | null> {
   const body = JSON.stringify({ name, sweepsId, date });
-  const response = await fetchWithNotFoundFallback('/api/sweeps', body, 'Failed to save sweeps match.');
+  const response = await fetchWithNotFoundFallback(
+    '/api/sweeps',
+    body,
+    'Failed to save sweeps match.',
+  );
 
   const result = await response.json();
   const match = result?.match;

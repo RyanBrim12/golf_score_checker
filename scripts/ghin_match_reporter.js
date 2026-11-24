@@ -26,18 +26,20 @@ async function getAllMatches() {
 }
 
 async function addGolferDetails(matches) {
-  return Promise.all(matches.map(async (match) => {
-    if (match.ghin === null) {
-      return { ...match, golfer: null };
-    }
+  return Promise.all(
+    matches.map(async (match) => {
+      if (match.ghin === null) {
+        return { ...match, golfer: null };
+      }
 
-    try {
-      return { ...match, golfer: await ghin.golfers.getOne(match.ghin) };
-    } catch (error) {
-      console.error(`Could not fetch GHIN details for ${match.name}:`, error);
-      return { ...match, golfer: null };
-    }
-  }));
+      try {
+        return { ...match, golfer: await ghin.golfers.getOne(match.ghin) };
+      } catch (error) {
+        console.error(`Could not fetch GHIN details for ${match.name}:`, error);
+        return { ...match, golfer: null };
+      }
+    }),
+  );
 }
 
 function csvValue(value) {
