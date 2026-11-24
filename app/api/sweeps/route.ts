@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { fetchGameByDate, fetchRoundsByGameId, serializeSweepsRound } from '@/lib/sweeps';
 import { createSweepsMatch, deleteSweepsMatch, getAllSweepsMatches, updateSweepsMatch } from '@/lib/database';
-import { withApiHandler } from '@/lib/request';
-import { isValidScoreDate, parseNameInput } from '@/lib/validation';
+import { readJsonObject, withApiHandler } from '@/lib/request';
+import { isValidScoreDate, parseNameInput, parseNullableSweepsId } from '@/lib/validation';
 
 export const runtime = 'nodejs';
 export const preferredRegion = 'home';
@@ -13,10 +13,10 @@ export async function GET(request: Request) {
     const date = searchParams.get('date');
 
     if (!isValidScoreDate(date)) {
-      return NextResponse.json({ message: 'Invalid ghin or date. Use a positive integer GHIN and a valid date within the last 10 years.' }, { status: 400 });
+      return NextResponse.json({ message: 'Invalid date. Use a valid date within the last 10 years.' }, { status: 400 });
     }
 
-    const game = await fetchGameByDate(date as string);
+    const game = await fetchGameByDate(date);
     const gameId = game?.id;
     const rounds = gameId ? await fetchRoundsByGameId(gameId) : [];
 
@@ -31,12 +31,19 @@ export async function GET(request: Request) {
 
 async function saveMatch(request: Request, update: boolean) {
   return withApiHandler(request, { auth: 'admin', requireSameOrigin: true }, async () => {
-    const body = await request.json();
+    const body = await readJsonObject(request);
+    if (!body) {
+      return NextResponse.json({ message: 'Invalid JSON request body.' }, { status: 400 });
+    }
+
     const name = parseNameInput(body?.name);
-    const date = typeof body?.date === 'string' ? body.date : null;
-    const sweepsId = body?.sweepsId === null ? null : typeof body?.sweepsId === 'number' && Number.isInteger(body.sweepsId) && body.sweepsId > 0 ? body.sweepsId : undefined;
+    const date = body.date === undefined || body.date === null ? null : body.date;
+    const sweepsId = parseNullableSweepsId(body.sweepsId);
     if (name === null || sweepsId === undefined) {
-      return NextResponse.json({ message: 'Provide both golfer names.' }, { status: 400 });
+      return NextResponse.json({ message: 'Provide a valid golfer name and a positive integer Sweeps ID or null.' }, { status: 400 });
+    }
+    if (date !== null && !isValidScoreDate(date)) {
+      return NextResponse.json({ message: 'Invalid date. Use a valid date within the last 10 years.' }, { status: 400 });
     }
 
     const result = update
@@ -75,7 +82,11 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   return withApiHandler(request, { auth: 'admin', requireSameOrigin: true }, async () => {
-    const body = await request.json();
+    const body = await readJsonObject(request);
+    if (!body) {
+      return NextResponse.json({ message: 'Invalid JSON request body.' }, { status: 400 });
+    }
+
     const name = parseNameInput(body?.name);
     if (name === null) {
       return NextResponse.json({ message: 'Provide a golfer name.' }, { status: 400 });

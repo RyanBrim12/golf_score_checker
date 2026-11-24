@@ -2,23 +2,45 @@ import { NextResponse } from 'next/server';
 import { GhinClient } from '@spicygolf/ghin';
 import type { GhinGolfer } from '@/lib/types';
 import { parseGhinGolferError } from '@/lib/ghin';
-import { withApiHandler } from '@/lib/request';
+import { readJsonObject, withApiHandler } from '@/lib/request';
 import { getGhinConfig } from '@/lib/serverConfig';
+import { parsePositiveGhin } from '@/lib/validation';
 
 export async function POST(request: Request) {
   return withApiHandler(request, { auth: 'viewer' }, async () => {
+    const body = await readJsonObject(request);
+    if (!body) {
+      return NextResponse.json({ message: 'Invalid JSON request body.' }, { status: 400 });
+    }
+
+    const stringFields = ['firstName', 'lastName', 'ghinNumber', 'state', 'club'] as const;
+    if (stringFields.some((field) => body[field] !== undefined && typeof body[field] !== 'string')) {
+      return NextResponse.json({ message: 'GHIN search fields must be strings.' }, { status: 400 });
+    }
+
+    const firstName = typeof body.firstName === 'string' ? body.firstName.trim() : '';
+    const lastName = typeof body.lastName === 'string' ? body.lastName.trim() : '';
+    const ghinNumber = typeof body.ghinNumber === 'string' ? body.ghinNumber.trim() : '';
+    const state = typeof body.state === 'string' ? body.state.trim() : '';
+    const club = typeof body.club === 'string' ? body.club.trim() : '';
+    const parsedGhin = ghinNumber ? parsePositiveGhin(ghinNumber) : null;
+
+    if (ghinNumber && parsedGhin === null) {
+      return NextResponse.json({ message: 'GHIN number must be a positive integer.' }, { status: 400 });
+    }
+
+    const page = body.page === undefined ? 1 : body.page;
+    const perPage = body.per_page === undefined ? 100 : body.per_page;
+    if (typeof page !== 'number' || !Number.isSafeInteger(page) || page < 1) {
+      return NextResponse.json({ message: 'Page must be a positive integer.' }, { status: 400 });
+    }
+    if (typeof perPage !== 'number' || !Number.isSafeInteger(perPage) || perPage < 1 || perPage > 100) {
+      return NextResponse.json({ message: 'per_page must be an integer between 1 and 100.' }, { status: 400 });
+    }
+
     const config = getGhinConfig();
-    const body = await request.json();
-    const firstName = typeof body?.firstName === 'string' ? body.firstName.trim() : '';
-    const lastName = typeof body?.lastName === 'string' ? body.lastName.trim() : '';
-    const ghinNumber = typeof body?.ghinNumber === 'string' ? body.ghinNumber.trim() : '';
-    const state = typeof body?.state === 'string' ? body.state.trim() : '';
-    const club = typeof body?.club === 'string' ? body.club.trim() : '';
 
-    const page = typeof body?.page === 'number' && body.page > 0 ? Math.floor(body.page) : 1;
-    const perPage = typeof body?.per_page === 'number' && body.per_page > 0 && body.per_page <= 100 ? Math.floor(body.per_page) : 100;
-
-    if (!firstName && !lastName && !ghinNumber) {
+    if (!firstName && !lastName && parsedGhin === null) {
       return NextResponse.json(
         { message: 'Provide at least a first name, last name, or GHIN number.' },
         { status: 400 }
@@ -32,8 +54,8 @@ export async function POST(request: Request) {
 
     const searchQueries: Array<Record<string, string>> = [];
 
-    if (ghinNumber) {
-      const golfers = [await client.golfers.getOne(ghinNumber)];
+    if (parsedGhin !== null) {
+      const golfers = [await client.golfers.getOne(parsedGhin)];
       if (golfers[0])
         return NextResponse.json({ golfers: golfers});
     }

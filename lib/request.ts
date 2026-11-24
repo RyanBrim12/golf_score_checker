@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { authenticate } from './auth';
 import type { AuthRole } from './session';
 import { requireSameOrigin } from './csrf';
+export { readJsonObject } from './requestBody';
 
 export function createRequestId(): string {
   return crypto.randomUUID();

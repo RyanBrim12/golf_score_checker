@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authenticateCredentials, createSessionCookie } from '@/lib/auth';
 import { requireSameOrigin } from '@/lib/csrf';
-import { createRequestId, internalServerError } from '@/lib/request';
+import { createRequestId, internalServerError, readJsonObject } from '@/lib/request';
 import { validateStringInput } from '@/lib/validation';
 
 const logger = {
@@ -20,7 +20,11 @@ export async function POST(request: Request) {
       return csrfError;
     }
 
-    const body = await request.json();
+    const body = await readJsonObject(request);
+    if (!body) {
+      return NextResponse.json({ message: 'Invalid username or password.' }, { status: 401 });
+    }
+
     const username = typeof body?.username === 'string' ? body.username.trim() : '';
     const password = typeof body?.password === 'string' ? body.password : '';
 

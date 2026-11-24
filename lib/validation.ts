@@ -1,4 +1,5 @@
 const MAX_GHIN = 999_999_999;
+const MAX_SWEEPS_ID = 2_147_483_647;
 const DATE_LOOKBACK_YEARS = 10;
 const MAX_NAME_LENGTH = 100;
 const MAX_STRING_LENGTH = 256;
@@ -29,8 +30,8 @@ export function parseNameInput(value: unknown): string | null {
   return name;
 }
 
-export function isValidScoreDate(value: string | null): value is string {
-  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+export function isValidScoreDate(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
 
   const parsed = new Date(`${value}T00:00:00.000Z`);
   if (Number.isNaN(parsed.getTime()) || getUtcDateString(parsed) !== value) return false;
@@ -49,5 +50,24 @@ export function parsePositiveGhin(value: string | null): number | null {
   if (!value || !/^\d+$/.test(value)) return null;
 
   const parsed = Number(value);
-  return Number.isSafeInteger(parsed) && parsed > 0 && parsed <= MAX_GHIN ? parsed : null;
+  return isValidGhinNumber(parsed) ? parsed : null;
+}
+
+function isValidGhinNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0 && value <= MAX_GHIN;
+}
+
+export function parseNullableGhin(value: unknown): number | null | undefined {
+  if (value === null) return null;
+  return isValidGhinNumber(value) ? value : undefined;
+}
+
+export function parseNullableSweepsId(value: unknown): number | null | undefined {
+  if (value === null) return null;
+  return typeof value === 'number' &&
+    Number.isSafeInteger(value) &&
+    value > 0 &&
+    value <= MAX_SWEEPS_ID
+    ? value
+    : undefined;
 }

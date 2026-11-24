@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAllMatches, createMatch, updateMatch } from "@/lib/database";
-import { parseNameInput } from "@/lib/validation";
-import { withApiHandler } from "@/lib/request";
+import { parseNameInput, parseNullableGhin } from "@/lib/validation";
+import { readJsonObject, withApiHandler } from "@/lib/request";
 
 export const runtime = 'nodejs';
 export const preferredRegion = 'home';
@@ -15,13 +15,17 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   return withApiHandler(request, { auth: 'admin', requireSameOrigin: true }, async () => {
-    const body = await request.json();
+    const body = await readJsonObject(request);
+    if (!body) {
+      return NextResponse.json({ message: 'Invalid JSON request body.' }, { status: 400 });
+    }
+
     const name = parseNameInput(body?.name);
-    const ghin = typeof body?.ghin === 'number' || body?.ghin === null ? body.ghin : undefined;
+    const ghin = parseNullableGhin(body.ghin);
 
     if (name === null || ghin === undefined) {
       return NextResponse.json(
-        { message: 'Provide both name and GHIN number.' },
+        { message: 'Provide a valid name and a positive integer GHIN number or null.' },
         { status: 400 }
       );
     }
@@ -43,13 +47,17 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   return withApiHandler(request, { auth: 'admin', requireSameOrigin: true }, async () => {
-    const body = await request.json();
+    const body = await readJsonObject(request);
+    if (!body) {
+      return NextResponse.json({ message: 'Invalid JSON request body.' }, { status: 400 });
+    }
+
     const name = parseNameInput(body?.name);
-    const ghin = typeof body?.ghin === 'number' || body?.ghin === null ? body.ghin : undefined;
+    const ghin = parseNullableGhin(body.ghin);
 
     if (name === null || ghin === undefined) {
       return NextResponse.json(
-        { message: 'Provide both name and GHIN number.' },
+        { message: 'Provide a valid name and a positive integer GHIN number or null.' },
         { status: 400 }
       );
     }
