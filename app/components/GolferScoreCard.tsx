@@ -132,7 +132,7 @@ export default function GolferScoreCard({
               : 'No match'}
           </button>
         </div>
-        <div className="min-w-0">
+        <div className="min-w-[10em]">
           {golfer.ghinNumber ? (
             <p className="text-sm text-slate-700">
               <span className="font-semibold">GHIN:</span> {golfer.ghinNumber}
